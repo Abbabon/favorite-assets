@@ -2,6 +2,26 @@
 
 A Unity Editor tool that allows you to mark Unity assets and folders as favorites for quick access through a dedicated window with context menu integration.
 
+[![openupm](https://img.shields.io/npm/v/com.mezookan.favorite-assets?label=openupm&registry_uri=https://package.openupm.com)](https://openupm.com/packages/com.mezookan.favorite-assets/)
+
+## Table of Contents
+
+- [Features](#features)
+- [Installation](#installation)
+  - [Method 1: OpenUPM (Recommended)](#method-1-openupm-recommended)
+  - [Method 2: Package Manager (Git URL)](#method-2-package-manager-git-url)
+  - [Method 3: Local Package](#method-3-local-package)
+  - [Method 4: Manual Installation](#method-4-manual-installation)
+- [Requirements](#requirements)
+- [Usage](#usage)
+  - [Adding Favorites](#adding-favorites)
+  - [Viewing Favorites](#viewing-favorites)
+  - [Managing Favorites](#managing-favorites)
+- [Technical Details](#technical-details)
+- [Uninstallation](#uninstallation)
+- [License](#license)
+- [Support](#support)
+
 ## Features
 
 - Mark any Unity asset or folder as a favorite from the Project window context menu
