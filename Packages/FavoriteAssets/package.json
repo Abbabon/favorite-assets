@@ -1,0 +1,29 @@
+{
+  "name": "com.mezookan.favorite-assets",
+  "version": "1.0.0",
+  "displayName": "Favorite Assets",
+  "description": "A Unity Editor tool that allows you to mark assets and folders as favorites for quick access through a dedicated window with context menu integration.",
+  "unity": "2022.3",
+  "author": {
+    "name": "Amit Netanel",
+    "email": "contact@mezookan.com"
+  },
+  "keywords": [
+    "unity",
+    "editor",
+    "assets",
+    "favorites",
+    "productivity",
+    "tools"
+  ],
+  "category": "Editor Extensions",
+  "dependencies": {},
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/yourusername/favorite-assets.git"
+  },
+  "publishConfig": {
+    "registry": "https://package.openupm.com"
+  },
+  "license": "MIT"
+}
