@@ -24,12 +24,19 @@ A Unity Editor tool that allows you to mark Unity assets and folders as favorite
 
 ## Features
 
-- Mark any Unity asset or folder as a favorite from the Project window context menu
-- Dedicated "Favorite Assets" window for viewing and managing favorites
-- Quick access to favorites with single-click selection and double-click opening
-- Persistent storage that survives Unity restarts
-- Visual asset type indicators and full path display
-- GUID-based tracking ensures favorites persist even when assets are moved
+- **Context Menu Integration**: Mark any Unity asset or folder as a favorite from the Project window context menu
+- **Dedicated Window**: Clean, modern UI for viewing and managing all your favorites
+- **Quick Access**: Single-click to select, double-click to open assets
+- **Smart Sorting**: Multiple sorting options with easy-to-use cycling buttons:
+  - **Name** (A-Z or Z-A)
+  - **Type** (Asset type, then name)
+  - **Date Added** (when you first favorited it)
+  - **File Modified** (actual file modification date from disk)
+- **Colorful Interface**: Color-coded buttons for intuitive navigation
+- **Automatic Cleanup**: Deleted assets are automatically removed from favorites
+- **Persistent Storage**: Data survives Unity restarts and project switches
+- **Visual Indicators**: Asset type labels and full path display
+- **GUID-based Tracking**: Favorites persist even when assets are moved or renamed
 
 ## Installation
 
@@ -109,16 +116,26 @@ Add this to your `manifest.json` file located in the `Packages` folder of your p
 4. Double-click to open the asset
 
 ### Managing Favorites
-- Use the **Clear All** button to remove all favorites
-- Use the **Refresh** button to update the list
-- The asset count is displayed in the toolbar
+- **Sorting Controls**:
+  - 🔵 **Blue Button**: Click to cycle through sorting options (Name → Type → Added → Modified)
+  - 🟢 **Green Button**: Click to toggle sort order (↑ ascending / ↓ descending)
+- **Action Buttons**:
+  - 🔷 **Refresh**: Update the list and clean up any deleted assets
+  - 🔴 **Clear All**: Remove all favorites (with confirmation dialog)
+- **Asset Count**: Displayed in the toolbar showing total number of favorites
+- **Automatic Cleanup**: Deleted assets are automatically removed when the window refreshes or gains focus
 
 ## Technical Details
 
 - **Data Storage**: Favorites are stored in JSON format at `Application.persistentDataPath/Editor/FavoriteAssetsData.json`
-- **Thread Safety**: Uses thread-safe data access patterns
-- **Asset Validation**: Automatically filters out missing or invalid assets on load
-- **UI Framework**: Built using Unity's UIElements system for modern Editor integration
+- **Thread Safety**: Uses thread-safe data access patterns with proper locking
+- **Smart Asset Validation**: 
+  - Checks both Unity GUID system and file system existence
+  - Automatically removes deleted assets from favorites
+  - Validates assets on load, focus, and refresh
+- **File Modification Tracking**: Real-time monitoring of actual file modification dates from disk
+- **UI Framework**: Built using Unity's UIElements system with modern CSS-style styling
+- **Performance Optimized**: Efficient sorting algorithms and minimal disk I/O operations
 
 ## Uninstallation
 

@@ -12,6 +12,21 @@ namespace FavoriteAssets.Editor
         private ScrollView _assetsList;
         private VisualElement _emptyState;
         private Label _countLabel;
+        private Button _sortTypeButton;
+        private Button _sortOrderButton;
+        
+        private FavoriteSortType _currentSortType = FavoriteSortType.Name;
+        private SortOrder _currentSortOrder = SortOrder.Ascending;
+        
+        private void OnFocus()
+        {
+            // Refresh the list when the window gains focus to update file modification dates
+            // This will also automatically clean up any deleted assets
+            if (_assetsList != null)
+            {
+                RefreshAssetsList();
+            }
+        }
         
         [MenuItem("Window/Favorite Assets")]
         public static void ShowWindow()
@@ -59,10 +74,30 @@ namespace FavoriteAssets.Editor
             leftSection.Add(title);
             leftSection.Add(_countLabel);
             
+            var centerSection = new VisualElement();
+            centerSection.AddToClassList("toolbar-center");
+            
+            var sortLabel = new Label("Sort:");
+            sortLabel.AddToClassList("sort-label");
+            
+            _sortTypeButton = new Button(CycleSortType);
+            _sortTypeButton.AddToClassList("sort-type-button");
+            _sortTypeButton.text = GetSortTypeDisplayName(_currentSortType);
+            
+            _sortOrderButton = new Button(CycleSortOrder);
+            _sortOrderButton.AddToClassList("sort-order-button");
+            _sortOrderButton.text = GetSortOrderDisplayName(_currentSortOrder);
+            
+            centerSection.Add(sortLabel);
+            centerSection.Add(_sortTypeButton);
+            centerSection.Add(_sortOrderButton);
+            
             var rightSection = new VisualElement();
             rightSection.AddToClassList("toolbar-right");
             
             var refreshButton = new Button(RefreshAssetsList) { text = "Refresh" };
+            refreshButton.AddToClassList("refresh-button");
+            
             var clearButton = new Button(ClearAllFavorites) { text = "Clear All" };
             clearButton.AddToClassList("clear-button");
             
@@ -70,10 +105,54 @@ namespace FavoriteAssets.Editor
             rightSection.Add(clearButton);
             
             toolbar.Add(leftSection);
+            toolbar.Add(centerSection);
             toolbar.Add(rightSection);
             
             _rootElement.Add(toolbar);
         }
+        
+        private void CycleSortType()
+        {
+            _currentSortType = _currentSortType switch
+            {
+                FavoriteSortType.Name => FavoriteSortType.Type,
+                FavoriteSortType.Type => FavoriteSortType.DateAdded,
+                FavoriteSortType.DateAdded => FavoriteSortType.DateUpdated,
+                FavoriteSortType.DateUpdated => FavoriteSortType.Name,
+                _ => FavoriteSortType.Name
+            };
+            
+            _sortTypeButton.text = GetSortTypeDisplayName(_currentSortType);
+            RefreshAssetsList();
+        }
+        
+        private void CycleSortOrder()
+        {
+            _currentSortOrder = _currentSortOrder == SortOrder.Ascending 
+                ? SortOrder.Descending 
+                : SortOrder.Ascending;
+            
+            _sortOrderButton.text = GetSortOrderDisplayName(_currentSortOrder);
+            RefreshAssetsList();
+        }
+        
+        private string GetSortTypeDisplayName(FavoriteSortType sortType)
+        {
+            return sortType switch
+            {
+                FavoriteSortType.Name => "Name",
+                FavoriteSortType.Type => "Type",
+                FavoriteSortType.DateAdded => "Added",
+                FavoriteSortType.DateUpdated => "Modified",
+                _ => "Name"
+            };
+        }
+        
+        private string GetSortOrderDisplayName(SortOrder sortOrder)
+        {
+            return sortOrder == SortOrder.Ascending ? "↑" : "↓";
+        }
+        
         
         private void CreateAssetsList()
         {
@@ -108,7 +187,7 @@ namespace FavoriteAssets.Editor
             
             _assetsList.Clear();
             
-            var favorites = FavoriteAssetsDataManager.GetFavorites();
+            var favorites = FavoriteAssetsDataManager.GetSortedFavorites(_currentSortType, _currentSortOrder);
             UpdateCountLabel(favorites.Count);
             
             if (favorites.Count == 0)
@@ -168,6 +247,8 @@ namespace FavoriteAssets.Editor
             {
                 if (evt.button == 0)
                 {
+                    FavoriteAssetsDataManager.UpdateAssetAccessDate(assetData.AssetGuid);
+                    
                     if (evt.clickCount == 2)
                     {
                         OpenAsset(assetData.AssetPath);

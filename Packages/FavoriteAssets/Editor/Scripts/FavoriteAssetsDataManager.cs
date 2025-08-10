@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -6,6 +7,19 @@ using UnityEngine;
 
 namespace FavoriteAssets.Editor
 {
+    public enum FavoriteSortType
+    {
+        Name,
+        Type, 
+        DateAdded,
+        DateUpdated
+    }
+    
+    public enum SortOrder
+    {
+        Ascending,
+        Descending
+    }
     public static class FavoriteAssetsDataManager
     {
         private const string _kPrefsKey = "FavoriteAssets_Data";
@@ -23,7 +37,47 @@ namespace FavoriteAssets.Editor
         {
             lock (_lock)
             {
+                CleanupInvalidAssets();
                 return _favoriteAssets?.ToList() ?? new List<FavoriteAssetData>();
+            }
+        }
+        
+        public static List<FavoriteAssetData> GetSortedFavorites(FavoriteSortType sortType, SortOrder sortOrder)
+        {
+            lock (_lock)
+            {
+                CleanupInvalidAssets();
+                var favorites = _favoriteAssets?.ToList() ?? new List<FavoriteAssetData>();
+                return SortFavorites(favorites, sortType, sortOrder);
+            }
+        }
+        
+        private static List<FavoriteAssetData> SortFavorites(List<FavoriteAssetData> favorites, FavoriteSortType sortType, SortOrder sortOrder)
+        {
+            switch (sortType)
+            {
+                case FavoriteSortType.Name:
+                    return sortOrder == SortOrder.Ascending 
+                        ? favorites.OrderBy(f => f.AssetName, StringComparer.OrdinalIgnoreCase).ToList()
+                        : favorites.OrderByDescending(f => f.AssetName, StringComparer.OrdinalIgnoreCase).ToList();
+                        
+                case FavoriteSortType.Type:
+                    return sortOrder == SortOrder.Ascending
+                        ? favorites.OrderBy(f => f.AssetType).ThenBy(f => f.AssetName, StringComparer.OrdinalIgnoreCase).ToList()
+                        : favorites.OrderByDescending(f => f.AssetType).ThenBy(f => f.AssetName, StringComparer.OrdinalIgnoreCase).ToList();
+                        
+                case FavoriteSortType.DateAdded:
+                    return sortOrder == SortOrder.Ascending
+                        ? favorites.OrderBy(f => f.DateAdded).ToList()
+                        : favorites.OrderByDescending(f => f.DateAdded).ToList();
+                        
+                case FavoriteSortType.DateUpdated:
+                    return sortOrder == SortOrder.Ascending
+                        ? favorites.OrderBy(f => f.FileModificationDate).ToList()
+                        : favorites.OrderByDescending(f => f.FileModificationDate).ToList();
+                        
+                default:
+                    return favorites;
             }
         }
         
@@ -83,6 +137,52 @@ namespace FavoriteAssets.Editor
             lock (_lock)
             {
                 return _favoriteAssets.Any(f => f.AssetGuid == assetGuid);
+            }
+        }
+        
+        public static void UpdateAssetAccessDate(string assetGuid)
+        {
+            lock (_lock)
+            {
+                var favorite = _favoriteAssets.FirstOrDefault(f => f.AssetGuid == assetGuid);
+                if (favorite != null)
+                {
+                    favorite.UpdateAccessDate();
+                    SaveFavorites();
+                }
+            }
+        }
+        
+        private static void CleanupInvalidAssets()
+        {
+            if (_favoriteAssets == null) return;
+            
+            var initialCount = _favoriteAssets.Count;
+            _favoriteAssets.RemoveAll(asset => !asset.IsValid());
+            
+            // Save only if we actually removed something
+            if (_favoriteAssets.Count != initialCount)
+            {
+                SaveFavorites();
+            }
+        }
+        
+        public static int CleanupInvalidAssetsManually()
+        {
+            lock (_lock)
+            {
+                if (_favoriteAssets == null) return 0;
+                
+                var initialCount = _favoriteAssets.Count;
+                _favoriteAssets.RemoveAll(asset => !asset.IsValid());
+                
+                var removedCount = initialCount - _favoriteAssets.Count;
+                if (removedCount > 0)
+                {
+                    SaveFavorites();
+                }
+                
+                return removedCount;
             }
         }
         
