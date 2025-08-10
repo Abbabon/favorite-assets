@@ -5,6 +5,33 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.1.0] - 2025-08-10
+
+### Added
+- Advanced sorting system with 4 sorting options: Name, Type, Date Added, File Modified
+- Color-coded cycling buttons replacing dropdowns for better UX
+- Real-time file modification date tracking from disk
+- Automatic cleanup of deleted assets from favorites list
+- Smart asset validation using both Unity GUID system and file system checks
+
+### Changed
+- Replaced dropdown menus with intuitive cycling buttons
+- Enhanced UI with colorful, easy-to-read button design
+- Improved toolbar layout with better visual hierarchy
+- Updated README with comprehensive feature documentation
+
+### Fixed
+- Assets deleted from project are now automatically removed from favorites
+- File modification dates now reflect actual disk changes, not just access times
+
+### Technical Details
+- Blue button cycles through sort types (Name → Type → Added → Modified)
+- Green button toggles sort order (ascending/descending with ↑/↓ arrows)
+- Teal refresh button for manual list updates
+- Red clear button for removing all favorites
+- Automatic cleanup triggers on window focus, refresh, and data load
+- Performance optimized with efficient validation and minimal disk I/O
+
 ## [1.0.0] - 2025-08-10
 
 ### Added
