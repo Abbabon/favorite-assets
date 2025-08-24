@@ -12,7 +12,7 @@ namespace FavoriteAssets.Editor
             if (selectedObjects == null || selectedObjects.Length == 0)
                 return;
                 
-            int addedCount = 0;
+            var addedCount = 0;
             foreach (var obj in selectedObjects)
             {
                 var assetPath = AssetDatabase.GetAssetPath(obj);
@@ -64,7 +64,7 @@ namespace FavoriteAssets.Editor
             if (selectedObjects == null || selectedObjects.Length == 0)
                 return;
                 
-            int removedCount = 0;
+            var removedCount = 0;
             foreach (var obj in selectedObjects)
             {
                 var assetPath = AssetDatabase.GetAssetPath(obj);

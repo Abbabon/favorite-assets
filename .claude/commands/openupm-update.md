@@ -43,7 +43,7 @@ Create a new version of the Favorite Assets package and publish it to OpenUPM.
 ### 3. **Git Operations**
 - Commits the version changes with standardized message
 - Creates annotated git tag with version (e.g., `v1.0.1`)
-- Pushes commits and tags to origin
+- Automatically pushes commits and tags to origin remote
 
 ### 4. **OpenUPM Integration**
 - Git tags automatically trigger OpenUPM build pipeline
@@ -51,9 +51,10 @@ Create a new version of the Favorite Assets package and publish it to OpenUPM.
 - Updates README badges if needed
 
 ### 5. **Post-Update Actions**
-- Displays new version information
+- Pushes all commits and tags to remote repository
+- Displays new version information and release summary
 - Provides links to monitor OpenUPM build status
-- Shows commands to verify the update
+- Confirms successful completion of the release process
 
 ## Files Updated
 
