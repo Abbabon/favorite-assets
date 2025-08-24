@@ -1,5 +1,7 @@
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
+using System;
 using UnityEditor;
 using UnityEngine;
 using UnityEngine.UIElements;
@@ -11,7 +13,7 @@ namespace FavoriteAssets.Editor
         private VisualElement _rootElement;
         private ScrollView _assetsList;
         private VisualElement _emptyState;
-        private Label _countLabel;
+        private Label _statusLabel;
         private Button _sortTypeButton;
         private Button _sortOrderButton;
         
@@ -57,6 +59,7 @@ namespace FavoriteAssets.Editor
             CreateToolbar();
             CreateAssetsList();
             CreateEmptyState();
+            CreateStatusBar();
             
             RefreshAssetsList();
         }
@@ -69,10 +72,7 @@ namespace FavoriteAssets.Editor
             var leftSection = new VisualElement();
             leftSection.AddToClassList("toolbar-left");
             
-            var title = new Label("Favorite Assets");
-            _countLabel = new Label();
-            leftSection.Add(title);
-            leftSection.Add(_countLabel);
+            // Remove title and count from toolbar - will be moved to status bar
             
             var centerSection = new VisualElement();
             centerSection.AddToClassList("toolbar-center");
@@ -95,12 +95,16 @@ namespace FavoriteAssets.Editor
             var rightSection = new VisualElement();
             rightSection.AddToClassList("toolbar-right");
             
+            var createGroupButton = new Button(CreateNewGroup) { text = "+ Group" };
+            createGroupButton.AddToClassList("create-group-button");
+            
             var refreshButton = new Button(RefreshAssetsList) { text = "Refresh" };
             refreshButton.AddToClassList("refresh-button");
             
             var clearButton = new Button(ClearAllFavorites) { text = "Clear All" };
             clearButton.AddToClassList("clear-button");
             
+            rightSection.Add(createGroupButton);
             rightSection.Add(refreshButton);
             rightSection.Add(clearButton);
             
@@ -110,6 +114,135 @@ namespace FavoriteAssets.Editor
             
             _rootElement.Add(toolbar);
         }
+        
+        private void CreateGroupHeader(FavoriteGroup group)
+        {
+            var groupHeader = new VisualElement();
+            groupHeader.AddToClassList("group-header");
+            
+            var collapseButton = new Button(() => ToggleGroupCollapse(group.Id));
+            collapseButton.AddToClassList("group-collapse-button");
+            collapseButton.text = group.IsCollapsed ? "▶" : "▼";
+            
+            var groupName = new Label(group.Name);
+            groupName.AddToClassList("group-name");
+            
+            // Add double-click to rename functionality
+            groupName.RegisterCallback<MouseDownEvent>(evt =>
+            {
+                if (evt.button == 0 && evt.clickCount == 2)
+                {
+                    StartGroupRename(groupHeader, group, groupName);
+                    evt.StopPropagation();
+                }
+            });
+            
+            var assetCount = FavoriteAssetsDataManager.GetAssetsInGroup(group.Id).Count;
+            var countLabel = new Label($"({assetCount})");
+            countLabel.AddToClassList("group-count");
+            
+            var deleteGroupButton = new Button(() => DeleteGroup(group.Id)) { text = "×" };
+            deleteGroupButton.AddToClassList("group-delete-button");
+            deleteGroupButton.tooltip = "Delete group";
+            
+            groupHeader.Add(collapseButton);
+            groupHeader.Add(groupName);
+            groupHeader.Add(countLabel);
+            groupHeader.Add(deleteGroupButton);
+            
+            _assetsList.Add(groupHeader);
+        }
+        
+        private void CreateSeparator()
+        {
+            var separator = new VisualElement();
+            separator.AddToClassList("separator");
+            _assetsList.Add(separator);
+        }
+        
+        
+        private void ToggleGroupCollapse(string groupId)
+        {
+            var group = FavoriteAssetsDataManager.GetGroups().FirstOrDefault(g => g.Id == groupId);
+            if (group != null)
+            {
+                FavoriteAssetsDataManager.SetGroupCollapsed(groupId, !group.IsCollapsed);
+                RefreshAssetsList();
+            }
+        }
+        
+        private void DeleteGroup(string groupId)
+        {
+            var group = FavoriteAssetsDataManager.GetGroups().FirstOrDefault(g => g.Id == groupId);
+            if (group != null && EditorUtility.DisplayDialog("Delete Group", 
+                $"Are you sure you want to delete the group '{group.Name}'? Assets will be moved to ungrouped.", 
+                "Delete", "Cancel"))
+            {
+                FavoriteAssetsDataManager.DeleteGroup(groupId);
+                RefreshAssetsList();
+            }
+        }
+        
+        private void CreateNewGroup()
+        {
+            var groupName = $"Group {System.DateTime.Now:HH:mm:ss}";
+            FavoriteAssetsDataManager.CreateGroup(groupName);
+            RefreshAssetsList();
+        }
+        
+        private void StartGroupRename(VisualElement groupHeader, FavoriteGroup group, Label groupNameLabel)
+        {
+            // Create text field for renaming
+            var textField = new TextField();
+            textField.AddToClassList("group-name-edit");
+            textField.value = group.Name;
+            
+            // Replace the label with the text field
+            var labelIndex = groupHeader.IndexOf(groupNameLabel);
+            groupHeader.RemoveAt(labelIndex);
+            groupHeader.Insert(labelIndex, textField);
+            
+            // Focus and select all text
+            textField.Focus();
+            textField.SelectAll();
+            
+            // Handle completion of rename
+            System.Action completeRename = () =>
+            {
+                var newName = textField.value.Trim();
+                if (!string.IsNullOrEmpty(newName) && newName != group.Name)
+                {
+                    FavoriteAssetsDataManager.RenameGroup(group.Id, newName);
+                }
+                RefreshAssetsList();
+            };
+            
+            // Handle escape to cancel
+            System.Action cancelRename = () =>
+            {
+                RefreshAssetsList();
+            };
+            
+            textField.RegisterCallback<FocusOutEvent>(evt =>
+            {
+                completeRename();
+            });
+            
+            textField.RegisterCallback<KeyDownEvent>(evt =>
+            {
+                if (evt.keyCode == KeyCode.Return)
+                {
+                    completeRename();
+                    evt.StopPropagation();
+                }
+                else if (evt.keyCode == KeyCode.Escape)
+                {
+                    cancelRename();
+                    evt.StopPropagation();
+                }
+            });
+        }
+        
         
         private void CycleSortType()
         {
@@ -187,10 +320,14 @@ namespace FavoriteAssets.Editor
             
             _assetsList.Clear();
             
-            var favorites = FavoriteAssetsDataManager.GetSortedFavorites(_currentSortType, _currentSortOrder);
-            UpdateCountLabel(favorites.Count);
+            var groups = FavoriteAssetsDataManager.GetGroups().OrderBy(g => g.SortOrder).ToList();
+            var ungroupedAssets = FavoriteAssetsDataManager.GetUngroupedAssets();
+            var sortedUngrouped = SortFavorites(ungroupedAssets, _currentSortType, _currentSortOrder);
             
-            if (favorites.Count == 0)
+            var totalCount = ungroupedAssets.Count + groups.Sum(g => FavoriteAssetsDataManager.GetAssetsInGroup(g.Id).Count);
+            UpdateStatusLabel(totalCount);
+            
+            if (totalCount == 0)
             {
                 _assetsList.style.display = DisplayStyle.None;
                 _emptyState.style.display = DisplayStyle.Flex;
@@ -200,16 +337,76 @@ namespace FavoriteAssets.Editor
             _assetsList.style.display = DisplayStyle.Flex;
             _emptyState.style.display = DisplayStyle.None;
             
-            foreach (var favorite in favorites)
+            // Add ungrouped assets first
+            if (sortedUngrouped.Count > 0)
             {
-                CreateAssetItem(favorite);
+                foreach (var favorite in sortedUngrouped)
+                {
+                    CreateAssetItem(favorite);
+                }
+                
+                // Add separator if there are also groups
+                if (groups.Count > 0)
+                {
+                    CreateSeparator();
+                }
+            }
+            
+            // Add groups and their assets
+            foreach (var group in groups)
+            {
+                CreateGroupHeader(group);
+                
+                if (!group.IsCollapsed)
+                {
+                    var groupAssets = FavoriteAssetsDataManager.GetAssetsInGroup(group.Id);
+                    var sortedGroupAssets = SortFavorites(groupAssets, _currentSortType, _currentSortOrder);
+                    
+                    foreach (var favorite in sortedGroupAssets)
+                    {
+                        CreateAssetItem(favorite, true);
+                    }
+                }
             }
         }
         
-        private void CreateAssetItem(FavoriteAssetData assetData)
+        private List<FavoriteAssetData> SortFavorites(List<FavoriteAssetData> favorites, FavoriteSortType sortType, SortOrder sortOrder)
+        {
+            switch (sortType)
+            {
+                case FavoriteSortType.Name:
+                    return sortOrder == SortOrder.Ascending 
+                        ? favorites.OrderBy(f => f.AssetName, StringComparer.OrdinalIgnoreCase).ToList()
+                        : favorites.OrderByDescending(f => f.AssetName, StringComparer.OrdinalIgnoreCase).ToList();
+                        
+                case FavoriteSortType.Type:
+                    return sortOrder == SortOrder.Ascending
+                        ? favorites.OrderBy(f => f.AssetType).ThenBy(f => f.AssetName, StringComparer.OrdinalIgnoreCase).ToList()
+                        : favorites.OrderByDescending(f => f.AssetType).ThenBy(f => f.AssetName, StringComparer.OrdinalIgnoreCase).ToList();
+                        
+                case FavoriteSortType.DateAdded:
+                    return sortOrder == SortOrder.Ascending
+                        ? favorites.OrderBy(f => f.DateAdded).ToList()
+                        : favorites.OrderByDescending(f => f.DateAdded).ToList();
+                        
+                case FavoriteSortType.DateUpdated:
+                    return sortOrder == SortOrder.Ascending
+                        ? favorites.OrderBy(f => f.FileModificationDate).ToList()
+                        : favorites.OrderByDescending(f => f.FileModificationDate).ToList();
+                        
+                default:
+                    return favorites;
+            }
+        }
+        
+        private void CreateAssetItem(FavoriteAssetData assetData, bool isInGroup = false)
         {
             var assetItem = new VisualElement();
             assetItem.AddToClassList("asset-item");
+            if (isInGroup)
+            {
+                assetItem.AddToClassList("asset-item-grouped");
+            }
             
             var icon = new Image();
             icon.AddToClassList("asset-icon");
@@ -243,6 +440,7 @@ namespace FavoriteAssets.Editor
             assetItem.Add(assetType);
             assetItem.Add(removeButton);
             
+            // Add left-click support
             assetItem.RegisterCallback<MouseDownEvent>(evt =>
             {
                 if (evt.button == 0)
@@ -253,7 +451,7 @@ namespace FavoriteAssets.Editor
                     {
                         OpenAsset(assetData.AssetPath);
                     }
-                    else
+                    else if (evt.clickCount == 1)
                     {
                         HighlightAssetInProject(assetData.AssetPath);
                     }
@@ -261,12 +459,83 @@ namespace FavoriteAssets.Editor
                 }
             });
             
+            // Add right-click context menu
+            assetItem.RegisterCallback<MouseDownEvent>(evt =>
+            {
+                if (evt.button == 1) // Right click
+                {
+                    ShowAssetContextMenu(assetData);
+                    evt.StopPropagation();
+                }
+            });
+            
             _assetsList.Add(assetItem);
         }
         
-        private void UpdateCountLabel(int count)
+        private void CreateStatusBar()
         {
-            _countLabel.text = $"({count})";
+            var statusBar = new VisualElement();
+            statusBar.AddToClassList("status-bar");
+            
+            _statusLabel = new Label();
+            _statusLabel.AddToClassList("status-label");
+            
+            statusBar.Add(_statusLabel);
+            _rootElement.Add(statusBar);
+        }
+        
+        private void ShowAssetContextMenu(FavoriteAssetData assetData)
+        {
+            var menu = new GenericMenu();
+            var groups = FavoriteAssetsDataManager.GetGroups().OrderBy(g => g.SortOrder).ToList();
+            
+            // Add "Remove from Group" option if asset is in a group
+            if (!string.IsNullOrEmpty(assetData.GroupId))
+            {
+                menu.AddItem(new GUIContent("Remove from Group"), false, () =>
+                {
+                    FavoriteAssetsDataManager.MoveAssetToGroup(assetData.AssetGuid, null);
+                    RefreshAssetsList();
+                });
+                menu.AddSeparator("");
+            }
+            
+            // Add "Move to Group" options
+            if (groups.Count > 0)
+            {
+                foreach (var group in groups)
+                {
+                    // Skip if asset is already in this group
+                    if (assetData.GroupId == group.Id)
+                        continue;
+                        
+                    var groupName = group.Name;
+                    menu.AddItem(new GUIContent($"Move to Group/{groupName}"), false, () =>
+                    {
+                        FavoriteAssetsDataManager.MoveAssetToGroup(assetData.AssetGuid, group.Id);
+                        RefreshAssetsList();
+                    });
+                }
+            }
+            else
+            {
+                menu.AddDisabledItem(new GUIContent("Move to Group/No Groups Available"));
+            }
+            
+            menu.AddSeparator("");
+            
+            // Add "Remove from Favorites" option
+            menu.AddItem(new GUIContent("Remove from Favorites"), false, () =>
+            {
+                RemoveFavorite(assetData.AssetGuid);
+            });
+            
+            menu.ShowAsContext();
+        }
+        
+        private void UpdateStatusLabel(int count)
+        {
+            _statusLabel.text = count == 1 ? "1 favorite asset" : $"{count} favorite assets";
         }
         
         private void RemoveFavorite(string assetGuid)

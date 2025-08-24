@@ -8,10 +8,10 @@
     flex-direction: row;
     justify-content: space-between;
     align-items: center;
-    padding: 4px;
+    padding: 2px;
     border-bottom-width: 1px;
     border-bottom-color: rgba(0, 0, 0, 0.3);
-    margin-bottom: 4px;
+    margin-bottom: 2px;
 }
 
 .toolbar-left {
@@ -116,6 +116,25 @@
     background-color: #900105;
 }
 
+.create-group-button {
+    background-color: #9B59B6;
+    border-color: #8E44AD;
+    color: white;
+    padding: 4px 8px;
+    margin-right: 4px;
+    font-size: 11px;
+    border-radius: 3px;
+}
+
+.create-group-button:hover {
+    background-color: #8E44AD;
+    border-color: #7D3C98;
+}
+
+.create-group-button:active {
+    background-color: #7D3C98;
+}
+
 .assets-list {
     flex-grow: 1;
 }
@@ -123,11 +142,11 @@
 .asset-item {
     flex-direction: row;
     align-items: center;
-    padding: 4px;
-    margin: 1px;
-    border-radius: 3px;
+    padding: 2px 4px;
+    margin: 0px;
+    border-radius: 2px;
     cursor: link;
-    min-height: 24px;
+    min-height: 20px;
 }
 
 .asset-item:hover {
@@ -209,4 +228,111 @@
     text-align: center;
     white-space: normal;
     max-width: 200px;
+}
+
+.status-bar {
+    flex-direction: row;
+    justify-content: center;
+    align-items: center;
+    padding: 4px;
+    border-top-width: 1px;
+    border-top-color: rgba(0, 0, 0, 0.3);
+    margin-top: 4px;
+}
+
+.status-label {
+    font-size: 11px;
+    color: rgba(255, 255, 255, 0.6);
+    text-align: center;
+}
+
+.group-header {
+    flex-direction: row;
+    align-items: center;
+    padding: 6px 4px;
+    margin: 2px 0;
+    border-radius: 4px;
+    background-color: rgba(100, 149, 237, 0.2);
+    border: 1px solid rgba(100, 149, 237, 0.4);
+}
+
+.group-header:hover {
+    background-color: rgba(100, 149, 237, 0.3);
+}
+
+.group-collapse-button {
+    width: 20px;
+    height: 20px;
+    background-color: transparent;
+    border-color: transparent;
+    color: rgba(255, 255, 255, 0.8);
+    padding: 0;
+    margin-right: 6px;
+    font-size: 12px;
+    border-radius: 2px;
+    flex-shrink: 0;
+}
+
+.group-collapse-button:hover {
+    background-color: rgba(255, 255, 255, 0.1);
+}
+
+.group-name {
+    font-size: 12px;
+    color: rgba(255, 255, 255, 0.9);
+    font-weight: bold;
+    flex-grow: 1;
+    cursor: text;
+}
+
+.group-name-edit {
+    font-size: 12px;
+    color: rgba(255, 255, 255, 0.9);
+    font-weight: bold;
+    flex-grow: 1;
+    background-color: rgba(255, 255, 255, 0.1);
+    border-color: rgba(100, 149, 237, 0.8);
+    border-width: 1px;
+    border-radius: 2px;
+    padding: 2px 4px;
+}
+
+.group-count {
+    font-size: 10px;
+    color: rgba(255, 255, 255, 0.7);
+    margin-left: 4px;
+}
+
+.group-delete-button {
+    width: 18px;
+    height: 18px;
+    background-color: rgba(220, 53, 69, 0.6);
+    border-color: rgba(220, 53, 69, 0.8);
+    color: white;
+    margin-left: 6px;
+    padding: 0;
+    border-radius: 2px;
+    flex-shrink: 0;
+    font-size: 12px;
+}
+
+.group-delete-button:hover {
+    background-color: rgba(220, 53, 69, 0.8);
+}
+
+.asset-item-grouped {
+    margin-left: 20px;
+    border-left: 2px solid rgba(100, 149, 237, 0.3);
+    padding-left: 8px;
+}
+
+.separator {
+    height: 1px;
+    background-color: rgba(255, 255, 255, 0.2);
+    margin: 8px 0;
+}
+
+
+.dragging {
+    opacity: 0.6;
 }

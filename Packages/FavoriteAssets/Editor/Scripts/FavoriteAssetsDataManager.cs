@@ -26,11 +26,120 @@ namespace FavoriteAssets.Editor
         private const string _kDataFileName = "FavoriteAssetsData.json";
         
         private static List<FavoriteAssetData> _favoriteAssets;
+        private static List<FavoriteGroup> _favoriteGroups;
         private static readonly object _lock = new object();
         
         static FavoriteAssetsDataManager()
         {
             LoadFavorites();
+        }
+        
+        public static List<FavoriteGroup> GetGroups()
+        {
+            lock (_lock)
+            {
+                return _favoriteGroups?.ToList() ?? new List<FavoriteGroup>();
+            }
+        }
+        
+        public static string CreateGroup(string name)
+        {
+            lock (_lock)
+            {
+                if (_favoriteGroups == null)
+                    _favoriteGroups = new List<FavoriteGroup>();
+                    
+                var sortOrder = _favoriteGroups.Count;
+                var group = new FavoriteGroup(name, sortOrder);
+                _favoriteGroups.Add(group);
+                SaveFavorites();
+                return group.Id;
+            }
+        }
+        
+        public static bool DeleteGroup(string groupId)
+        {
+            lock (_lock)
+            {
+                var groupIndex = _favoriteGroups?.FindIndex(g => g.Id == groupId) ?? -1;
+                if (groupIndex >= 0)
+                {
+                    _favoriteGroups.RemoveAt(groupIndex);
+                    
+                    // Move ungrouped assets back to no group
+                    foreach (var asset in _favoriteAssets.Where(a => a.GroupId == groupId))
+                    {
+                        asset.SetGroupId(null);
+                    }
+                    
+                    SaveFavorites();
+                    return true;
+                }
+                return false;
+            }
+        }
+        
+        public static bool SetGroupCollapsed(string groupId, bool collapsed)
+        {
+            lock (_lock)
+            {
+                var group = _favoriteGroups?.FirstOrDefault(g => g.Id == groupId);
+                if (group != null)
+                {
+                    group.SetCollapsed(collapsed);
+                    SaveFavorites();
+                    return true;
+                }
+                return false;
+            }
+        }
+        
+        public static bool RenameGroup(string groupId, string newName)
+        {
+            lock (_lock)
+            {
+                var group = _favoriteGroups?.FirstOrDefault(g => g.Id == groupId);
+                if (group != null && !string.IsNullOrEmpty(newName))
+                {
+                    group.SetName(newName);
+                    SaveFavorites();
+                    return true;
+                }
+                return false;
+            }
+        }
+        
+        public static bool MoveAssetToGroup(string assetGuid, string groupId)
+        {
+            lock (_lock)
+            {
+                var asset = _favoriteAssets?.FirstOrDefault(a => a.AssetGuid == assetGuid);
+                if (asset != null)
+                {
+                    asset.SetGroupId(groupId);
+                    SaveFavorites();
+                    return true;
+                }
+                return false;
+            }
+        }
+        
+        public static List<FavoriteAssetData> GetAssetsInGroup(string groupId)
+        {
+            lock (_lock)
+            {
+                CleanupInvalidAssets();
+                return _favoriteAssets?.Where(a => a.GroupId == groupId).ToList() ?? new List<FavoriteAssetData>();
+            }
+        }
+        
+        public static List<FavoriteAssetData> GetUngroupedAssets()
+        {
+            lock (_lock)
+            {
+                CleanupInvalidAssets();
+                return _favoriteAssets?.Where(a => string.IsNullOrEmpty(a.GroupId)).ToList() ?? new List<FavoriteAssetData>();
+            }
         }
         
         public static List<FavoriteAssetData> GetFavorites()
@@ -200,6 +309,7 @@ namespace FavoriteAssets.Editor
             lock (_lock)
             {
                 _favoriteAssets = new List<FavoriteAssetData>();
+                _favoriteGroups = new List<FavoriteGroup>();
                 
                 var dataPath = GetDataPath();
                 if (File.Exists(dataPath))
@@ -208,9 +318,16 @@ namespace FavoriteAssets.Editor
                     {
                         var json = File.ReadAllText(dataPath);
                         var wrapper = JsonUtility.FromJson<FavoriteAssetsWrapper>(json);
-                        if (wrapper != null && wrapper.favorites != null)
+                        if (wrapper != null)
                         {
-                            _favoriteAssets = wrapper.favorites.Where(f => f.IsValid()).ToList();
+                            if (wrapper.favorites != null)
+                            {
+                                _favoriteAssets = wrapper.favorites.Where(f => f.IsValid()).ToList();
+                            }
+                            if (wrapper.groups != null)
+                            {
+                                _favoriteGroups = wrapper.groups.ToList();
+                            }
                         }
                     }
                     catch (System.Exception e)
@@ -234,7 +351,7 @@ namespace FavoriteAssets.Editor
                         Directory.CreateDirectory(directory);
                     }
                     
-                    var wrapper = new FavoriteAssetsWrapper { favorites = _favoriteAssets };
+                    var wrapper = new FavoriteAssetsWrapper { favorites = _favoriteAssets, groups = _favoriteGroups ?? new List<FavoriteGroup>() };
                     var json = JsonUtility.ToJson(wrapper, true);
                     File.WriteAllText(dataPath, json);
                 }
@@ -250,10 +367,11 @@ namespace FavoriteAssets.Editor
             return Path.Combine(Application.persistentDataPath, "Editor", _kDataFileName);
         }
         
-        [System.Serializable]
+        [Serializable]
         private class FavoriteAssetsWrapper
         {
-            public List<FavoriteAssetData> favorites = new List<FavoriteAssetData>();
+            public List<FavoriteAssetData> favorites = new();
+            public List<FavoriteGroup> groups = new();
         }
     }
 }

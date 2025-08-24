@@ -11,15 +11,17 @@ namespace FavoriteAssets.Editor
         [SerializeField] private string _assetName;
         [SerializeField] private string _assetType;
         [SerializeField] private string _assetGuid;
-        [SerializeField] private DateTime _dateAdded;
-        [SerializeField] private DateTime _dateUpdated;
+        [SerializeField] private string _groupId;
+        [SerializeField] private long _dateAddedTicks;
+        [SerializeField] private long _dateUpdatedTicks;
         
         public string AssetPath => _assetPath;
         public string AssetName => _assetName;
         public string AssetType => _assetType;
         public string AssetGuid => _assetGuid;
-        public DateTime DateAdded => _dateAdded;
-        public DateTime DateUpdated => _dateUpdated == default ? _dateAdded : _dateUpdated;
+        public DateTime DateAdded => _dateAddedTicks == 0 ? DateTime.Now : new DateTime(_dateAddedTicks);
+        public DateTime DateUpdated => _dateUpdatedTicks == 0 ? DateAdded : new DateTime(_dateUpdatedTicks);
+        public string GroupId => _groupId;
         
         public DateTime FileModificationDate
         {
@@ -31,7 +33,7 @@ namespace FavoriteAssets.Editor
                     {
                         return File.GetLastWriteTime(_assetPath);
                     }
-                    else if (Directory.Exists(_assetPath))
+                    if (Directory.Exists(_assetPath))
                     {
                         return Directory.GetLastWriteTime(_assetPath);
                     }
@@ -44,19 +46,26 @@ namespace FavoriteAssets.Editor
             }
         }
         
-        public FavoriteAssetData(string assetPath, string assetName, string assetType, string assetGuid)
+        public FavoriteAssetData(string assetPath, string assetName, string assetType, string assetGuid, string groupId = null)
         {
             _assetPath = assetPath;
             _assetName = assetName;
             _assetType = assetType;
             _assetGuid = assetGuid;
-            _dateAdded = DateTime.Now;
-            _dateUpdated = DateTime.Now;
+            _groupId = groupId;
+            var now = DateTime.Now;
+            _dateAddedTicks = now.Ticks;
+            _dateUpdatedTicks = now.Ticks;
         }
         
         public void UpdateAccessDate()
         {
-            _dateUpdated = DateTime.Now;
+            _dateUpdatedTicks = DateTime.Now.Ticks;
+        }
+        
+        public void SetGroupId(string groupId)
+        {
+            _groupId = groupId;
         }
         
         public bool IsValid()
