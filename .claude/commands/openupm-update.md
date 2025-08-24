@@ -34,23 +34,28 @@ Create a new version of the Favorite Assets package and publish it to OpenUPM.
 - Confirms package.json exists and is valid
 - Validates current working directory
 
-### 2. **Version Management**
+### 2. **Documentation Updates**
+- **README.md**: Updates feature descriptions, version numbers, and installation instructions
+- **CHANGELOG.md**: Adds new version section with categorized changes
+- Ensures all documentation reflects the new version and features
+
+### 3. **Version Management**
 - Reads current version from `Packages/FavoriteAssets/package.json`
 - Calculates new version based on semantic versioning rules
 - Updates package.json with new version
-- Updates CHANGELOG.md with new version section
+- Validates all version references are consistent
 
-### 3. **Git Operations**
+### 4. **Git Operations**
 - Commits the version changes with standardized message
 - Creates annotated git tag with version (e.g., `v1.0.1`)
 - Automatically pushes commits and tags to origin remote
 
-### 4. **OpenUPM Integration**
+### 5. **OpenUPM Integration**
 - Git tags automatically trigger OpenUPM build pipeline
 - New version becomes available on OpenUPM registry
 - Updates README badges if needed
 
-### 5. **Post-Update Actions**
+### 6. **Post-Update Actions**
 - Pushes all commits and tags to remote repository
 - Displays new version information and release summary
 - Provides links to monitor OpenUPM build status
@@ -59,6 +64,7 @@ Create a new version of the Favorite Assets package and publish it to OpenUPM.
 ## Files Updated
 
 This command will modify:
+- `README.md` - Feature descriptions, version numbers, installation instructions
 - `Packages/FavoriteAssets/package.json` - Version number
 - `CHANGELOG.md` - New version entry with timestamp
 - Git repository - New commit and tag
@@ -104,9 +110,13 @@ Before running this command:
 - [ ] All changes are committed to git
 - [ ] Working directory is clean
 - [ ] On main/master branch
-- [ ] CHANGELOG.md updated with new changes
-- [ ] Package tested and working
+- [ ] **README.md updated** with new features, version numbers, and usage instructions
+- [ ] **CHANGELOG.md updated** with new changes in proper format
+- [ ] Package tested and working in Unity Editor
+- [ ] All new features documented with examples
+- [ ] Version numbers consistent across README and package.json
 - [ ] Breaking changes documented (for major versions)
+- [ ] Installation instructions verified and up-to-date
 
 ## Git Commit Message Format
 

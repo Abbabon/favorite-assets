@@ -24,19 +24,37 @@ A Unity Editor tool that allows you to mark Unity assets and folders as favorite
 
 ## Features
 
-- **Context Menu Integration**: Mark any Unity asset or folder as a favorite from the Project window context menu
+### 🗂️ **Asset Organization**
+- **Collapsible Groups**: Organize your favorites into named, collapsible groups for better management
+- **Group Management**: Create, rename (double-click), and delete groups with confirmation dialogs
+- **Drag-Free Organization**: Right-click context menu to easily move assets between groups
+- **Smart Layout**: Ungrouped assets appear first, followed by organized grouped content
+
+### 🎯 **Quick Access & Navigation**
+- **Context Menu Integration**: Mark any Unity asset or folder as a favorite from the Project window
 - **Dedicated Window**: Clean, modern UI for viewing and managing all your favorites
-- **Quick Access**: Single-click to select, double-click to open assets
+- **One-Click Access**: Single-click to select, double-click to open assets
+- **Visual Hierarchy**: Groups have distinctive blue headers with expand/collapse arrows
+
+### 🔧 **Advanced Controls**
 - **Smart Sorting**: Multiple sorting options with easy-to-use cycling buttons:
   - **Name** (A-Z or Z-A)
-  - **Type** (Asset type, then name)
+  - **Type** (Asset type, then name)  
   - **Date Added** (when you first favorited it)
   - **File Modified** (actual file modification date from disk)
-- **Colorful Interface**: Color-coded buttons for intuitive navigation
+- **Colorful Toolbar**: Color-coded buttons for intuitive navigation:
+  - 🔵 **Blue**: Sort type cycling
+  - 🟢 **Green**: Sort order toggle  
+  - 🟣 **Purple**: Create new group
+  - 🔷 **Teal**: Refresh list
+  - 🔴 **Red**: Clear all favorites
+- **Status Bar**: Bottom status line showing total count of favorite assets
+
+### 🛡️ **Reliability & Performance**
 - **Automatic Cleanup**: Deleted assets are automatically removed from favorites
 - **Persistent Storage**: Data survives Unity restarts and project switches
-- **Visual Indicators**: Asset type labels and full path display
 - **GUID-based Tracking**: Favorites persist even when assets are moved or renamed
+- **Thread-Safe Operations**: Robust data management with proper locking mechanisms
 
 ## Installation
 
@@ -93,7 +111,7 @@ Add this to your `manifest.json` file located in the `Packages` folder of your p
     }
   ],
   "dependencies": {
-    "com.mezookan.favorite-assets": "1.0.0"
+    "com.mezookan.favorite-assets": "1.2.0"
   }
 }
 ```
@@ -109,33 +127,64 @@ Add this to your `manifest.json` file located in the `Packages` folder of your p
 1. Right-click any asset or folder in the Project window
 2. Select **Add to Favorites** from the context menu
 
-### Viewing Favorites
+### Opening the Window
 1. Open the Favorite Assets window via **Window → Favorite Assets**
-2. View all your favorite assets with their icons, names, and paths
+2. The window displays all your favorite assets with their icons, names, and paths
 3. Single-click to select an asset in the Project window
 4. Double-click to open the asset
 
-### Managing Favorites
+### Working with Groups
+- **Creating Groups**:
+  - Click the 🟣 **"+ Group"** button in the toolbar
+  - Groups are created with timestamp names (e.g., "Group 14:32:15")
+- **Renaming Groups**:
+  - Double-click any group name to edit it inline
+  - Press **Enter** to save or **Escape** to cancel
+- **Organizing Assets**:
+  - Right-click any asset to open the context menu
+  - Select **"Move to Group"** → choose target group
+  - Use **"Remove from Group"** to move assets back to ungrouped
+- **Managing Groups**:
+  - Click **▶/▼** arrows to expand/collapse groups
+  - Click **×** button to delete groups (assets move to ungrouped)
+  - Groups remember their collapsed state
+
+### Sorting & Filtering
 - **Sorting Controls**:
   - 🔵 **Blue Button**: Click to cycle through sorting options (Name → Type → Added → Modified)
   - 🟢 **Green Button**: Click to toggle sort order (↑ ascending / ↓ descending)
+  - Sorting applies to both grouped and ungrouped assets
 - **Action Buttons**:
   - 🔷 **Refresh**: Update the list and clean up any deleted assets
   - 🔴 **Clear All**: Remove all favorites (with confirmation dialog)
-- **Asset Count**: Displayed in the toolbar showing total number of favorites
+- **Status Information**:
+  - Bottom status bar shows total count of all favorite assets
+  - Group headers show count of assets in each group
 - **Automatic Cleanup**: Deleted assets are automatically removed when the window refreshes or gains focus
 
 ## Technical Details
 
-- **Data Storage**: Favorites are stored in JSON format at `Application.persistentDataPath/Editor/FavoriteAssetsData.json`
-- **Thread Safety**: Uses thread-safe data access patterns with proper locking
+### Data Architecture
+- **Storage Format**: Favorites and groups stored in JSON format at `Application.persistentDataPath/Editor/FavoriteAssetsData.json`
+- **Group System**: New `FavoriteGroup` class with metadata (ID, name, collapsed state, creation date, sort order)
+- **Asset Linking**: Assets linked to groups via `groupId` field in `FavoriteAssetData`
+- **Serialization**: DateTime fields converted to serializable long ticks for Unity compatibility
+
+### Performance & Reliability
+- **Thread Safety**: Uses thread-safe data access patterns with proper locking mechanisms
 - **Smart Asset Validation**: 
   - Checks both Unity GUID system and file system existence
-  - Automatically removes deleted assets from favorites
+  - Automatically removes deleted assets from favorites and groups
   - Validates assets on load, focus, and refresh
 - **File Modification Tracking**: Real-time monitoring of actual file modification dates from disk
-- **UI Framework**: Built using Unity's UIElements system with modern CSS-style styling
-- **Performance Optimized**: Efficient sorting algorithms and minimal disk I/O operations
+- **Memory Efficient**: Optimized data structures and minimal garbage collection
+
+### User Interface
+- **UI Framework**: Built using Unity's UIElements system with modern USS styling
+- **Responsive Design**: Compact, scalable interface that adapts to different window sizes
+- **Color Coding**: Distinctive colors for each button type to improve usability
+- **Context Menus**: Native Unity GenericMenu integration for intuitive asset management
+- **Inline Editing**: TextField-based group renaming with keyboard shortcuts
 
 ## Uninstallation
 
