@@ -5,6 +5,36 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.2.0] - 2025-08-24
+
+### Added
+- **Collapsible Groups System**: Organize favorite assets into named, collapsible groups
+- **Group Management**: Create, rename (double-click), and delete groups with confirmation
+- **Asset Movement**: Right-click context menu to move assets between groups
+- **Purple "Create Group" Button**: Dedicated toolbar button for easy group creation
+- **Status Bar**: Bottom status line showing total favorite asset count
+- **Double-Click Rename**: Click group names twice to rename them inline
+
+### Changed
+- **UI Layout**: Removed redundant "FavoriteAssets (N)" title from window header
+- **Toolbar Organization**: Moved create group functionality to main toolbar
+- **Visual Hierarchy**: Groups have distinctive blue headers with expand/collapse arrows
+- **Compact Design**: Reduced padding and margins throughout interface
+- **Asset Organization**: Ungrouped assets appear first, followed by grouped assets
+
+### Fixed
+- **DateTime Serialization**: Converted DateTime fields to serializable long ticks format
+- **CSS Styling**: Removed problematic transform properties causing ArgumentOutOfRangeException
+- **Group Data Persistence**: All group data now properly saves/loads with favorites
+
+### Technical Details
+- New `FavoriteGroup` class for group metadata management
+- Extended `FavoriteAssetData` with `groupId` field for group membership
+- Purple button (#9B59B6) for group creation to avoid color conflicts
+- Context menu system for intuitive asset-to-group assignment
+- Inline text field editing for group names with Enter/Escape shortcuts
+- Thread-safe group operations with proper data validation
+
 ## [1.1.0] - 2025-08-10
 
 ### Added
