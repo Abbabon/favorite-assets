@@ -38,7 +38,7 @@ namespace FavoriteAssets.Editor
         {
             lock (_lock)
             {
-                return _favoriteGroups?.ToList() ?? new List<FavoriteGroup>();
+                return _favoriteGroups?.OrderBy(g => g.Name, StringComparer.OrdinalIgnoreCase).ToList() ?? new List<FavoriteGroup>();
             }
         }
         
