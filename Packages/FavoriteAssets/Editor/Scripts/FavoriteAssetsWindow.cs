@@ -320,7 +320,7 @@ namespace FavoriteAssets.Editor
             
             _assetsList.Clear();
             
-            var groups = FavoriteAssetsDataManager.GetGroups().OrderBy(g => g.SortOrder).ToList();
+            var groups = FavoriteAssetsDataManager.GetGroups();
             var ungroupedAssets = FavoriteAssetsDataManager.GetUngroupedAssets();
             var sortedUngrouped = SortFavorites(ungroupedAssets, _currentSortType, _currentSortOrder);
             
@@ -487,7 +487,7 @@ namespace FavoriteAssets.Editor
         private void ShowAssetContextMenu(FavoriteAssetData assetData)
         {
             var menu = new GenericMenu();
-            var groups = FavoriteAssetsDataManager.GetGroups().OrderBy(g => g.SortOrder).ToList();
+            var groups = FavoriteAssetsDataManager.GetGroups();
             
             // Add "Remove from Group" option if asset is in a group
             if (!string.IsNullOrEmpty(assetData.GroupId))
