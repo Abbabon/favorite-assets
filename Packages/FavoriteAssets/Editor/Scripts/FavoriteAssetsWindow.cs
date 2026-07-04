@@ -206,9 +206,13 @@ namespace FavoriteAssets.Editor
             textField.Focus();
             textField.SelectAll();
             
+            var renameHandled = false;
+
             // Handle completion of rename
             System.Action completeRename = () =>
             {
+                if (renameHandled) return;
+                renameHandled = true;
                 var newName = textField.value.Trim();
                 if (!string.IsNullOrEmpty(newName) && newName != group.Name)
                 {
@@ -216,10 +220,12 @@ namespace FavoriteAssets.Editor
                 }
                 RefreshAssetsList();
             };
-            
+
             // Handle escape to cancel
             System.Action cancelRename = () =>
             {
+                if (renameHandled) return;
+                renameHandled = true;
                 RefreshAssetsList();
             };
             
@@ -317,9 +323,10 @@ namespace FavoriteAssets.Editor
         private void RefreshAssetsList()
         {
             if (_assetsList == null) return;
-            
+
+            FavoriteAssetsDataManager.CleanupInvalidAssetsManually();
             _assetsList.Clear();
-            
+
             var groups = FavoriteAssetsDataManager.GetGroups();
             var ungroupedAssets = FavoriteAssetsDataManager.GetUngroupedAssets();
             var sortedUngrouped = SortFavorites(ungroupedAssets, _currentSortType, _currentSortOrder);

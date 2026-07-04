@@ -128,34 +128,30 @@ namespace FavoriteAssets.Editor
         {
             lock (_lock)
             {
-                CleanupInvalidAssets();
                 return _favoriteAssets?.Where(a => a.GroupId == groupId).ToList() ?? new List<FavoriteAssetData>();
             }
         }
-        
+
         public static List<FavoriteAssetData> GetUngroupedAssets()
         {
             lock (_lock)
             {
-                CleanupInvalidAssets();
                 return _favoriteAssets?.Where(a => string.IsNullOrEmpty(a.GroupId)).ToList() ?? new List<FavoriteAssetData>();
             }
         }
-        
+
         public static List<FavoriteAssetData> GetFavorites()
         {
             lock (_lock)
             {
-                CleanupInvalidAssets();
                 return _favoriteAssets?.ToList() ?? new List<FavoriteAssetData>();
             }
         }
-        
+
         public static List<FavoriteAssetData> GetSortedFavorites(FavoriteSortType sortType, SortOrder sortOrder)
         {
             lock (_lock)
             {
-                CleanupInvalidAssets();
                 var favorites = _favoriteAssets?.ToList() ?? new List<FavoriteAssetData>();
                 return SortFavorites(favorites, sortType, sortOrder);
             }
@@ -257,7 +253,6 @@ namespace FavoriteAssets.Editor
                 if (favorite != null)
                 {
                     favorite.UpdateAccessDate();
-                    SaveFavorites();
                 }
             }
         }
