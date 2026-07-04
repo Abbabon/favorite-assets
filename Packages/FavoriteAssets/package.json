@@ -20,7 +20,7 @@
   "dependencies": {},
   "repository": {
     "type": "git",
-    "url": "https://github.com/yourusername/favorite-assets.git"
+    "url": "https://github.com/Abbabon/favorite-assets.git"
   },
   "publishConfig": {
     "registry": "https://package.openupm.com"
