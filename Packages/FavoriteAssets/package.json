@@ -1,6 +1,6 @@
 {
   "name": "com.mezookan.favorite-assets",
-  "version": "1.2.2",
+  "version": "1.2.3",
   "displayName": "Favorite Assets",
   "description": "A Unity Editor tool that allows you to mark assets and folders as favorites for quick access through a dedicated window with context menu integration.",
   "unity": "2022.3",
