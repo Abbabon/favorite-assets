@@ -186,31 +186,31 @@ namespace FavoriteAssets.Editor
             }
         }
         
-        public static bool AddFavorite(string assetPath)
+        public static bool AddFavorite(string assetPath, string groupId = null)
         {
             if (string.IsNullOrEmpty(assetPath))
                 return false;
-                
+
             var assetGuid = AssetDatabase.AssetPathToGUID(assetPath);
             if (string.IsNullOrEmpty(assetGuid))
                 return false;
-                
+
             lock (_lock)
             {
                 if (_favoriteAssets.Any(f => f.AssetGuid == assetGuid))
                     return false;
-                    
-                var assetName = Directory.Exists(assetPath) ? 
-                    Path.GetFileName(assetPath.TrimEnd('/', '\\')) : 
+
+                var assetName = Directory.Exists(assetPath) ?
+                    Path.GetFileName(assetPath.TrimEnd('/', '\\')) :
                     Path.GetFileNameWithoutExtension(assetPath);
-                    
+
                 var asset = AssetDatabase.LoadMainAssetAtPath(assetPath);
-                var assetType = Directory.Exists(assetPath) ? "Folder" : 
+                var assetType = Directory.Exists(assetPath) ? "Folder" :
                     (asset != null ? asset.GetType().Name : "Unknown");
-                
-                var favoriteData = new FavoriteAssetData(assetPath, assetName, assetType, assetGuid);
+
+                var favoriteData = new FavoriteAssetData(assetPath, assetName, assetType, assetGuid, groupId);
                 _favoriteAssets.Add(favoriteData);
-                
+
                 SaveFavorites();
                 return true;
             }

@@ -27,7 +27,8 @@ A Unity Editor tool that allows you to mark Unity assets and folders as favorite
 ### 🗂️ **Asset Organization**
 - **Collapsible Groups**: Organize your favorites into named, collapsible groups for better management
 - **Group Management**: Create, rename (double-click), and delete groups with confirmation dialogs
-- **Drag-Free Organization**: Right-click context menu to easily move assets between groups
+- **Drag & Drop**: Drag assets from the Project window into the Favorites window (drop on a group header to file them directly), drag favorites onto groups to reorganize, or drag them out into the Scene, Hierarchy, or Inspector to use them
+- **Context Menu Organization**: Right-click context menu to easily move assets between groups
 - **Smart Layout**: Ungrouped assets appear first, followed by organized grouped content
 
 ### 🎯 **Quick Access & Navigation**

@@ -5,6 +5,15 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.3.0] - 2026-07-05
+
+### Added
+- **Drag & Drop support**:
+  - Drag assets or folders from the Project window onto the Favorites window to add them; drop them on a group header to add them straight into that group
+  - Drag a favorite onto a group header to move it into that group, or onto the list background to ungroup it
+  - Drag a favorite out of the window into the Scene view, Hierarchy, or Inspector object fields — it carries the real asset reference
+  - Drop targets highlight while dragging over them
+
 ## [1.2.3] - 2026-07-05
 
 ### Changed

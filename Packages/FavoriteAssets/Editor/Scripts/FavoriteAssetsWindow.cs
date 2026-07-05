@@ -19,6 +19,9 @@ namespace FavoriteAssets.Editor
         
         private FavoriteSortType _currentSortType = FavoriteSortType.Name;
         private SortOrder _currentSortOrder = SortOrder.Ascending;
+
+        private const string _kDragGenericDataKey = "FavoriteAssets.DraggedGuid";
+        private const string _kDragOverClass = "drag-over";
         
         private void OnFocus()
         {
@@ -60,8 +63,155 @@ namespace FavoriteAssets.Editor
             CreateAssetsList();
             CreateEmptyState();
             CreateStatusBar();
-            
+
+            RegisterWindowDropZone();
+
             RefreshAssetsList();
+        }
+
+        private void RegisterWindowDropZone()
+        {
+            _rootElement.RegisterCallback<DragUpdatedEvent>(evt =>
+            {
+                if (!CanAcceptCurrentDrag())
+                    return;
+
+                DragAndDrop.visualMode = IsInternalDrag()
+                    ? DragAndDropVisualMode.Move
+                    : DragAndDropVisualMode.Copy;
+                _rootElement.AddToClassList(_kDragOverClass);
+            });
+
+            _rootElement.RegisterCallback<DragPerformEvent>(evt =>
+            {
+                _rootElement.RemoveFromClassList(_kDragOverClass);
+                if (!CanAcceptCurrentDrag())
+                    return;
+
+                DragAndDrop.AcceptDrag();
+                HandleDrop(targetGroupId: null);
+            });
+
+            _rootElement.RegisterCallback<DragLeaveEvent>(evt => _rootElement.RemoveFromClassList(_kDragOverClass));
+            _rootElement.RegisterCallback<DragExitedEvent>(evt => _rootElement.RemoveFromClassList(_kDragOverClass));
+        }
+
+        private void RegisterGroupDropZone(VisualElement groupHeader, string groupId)
+        {
+            groupHeader.RegisterCallback<DragUpdatedEvent>(evt =>
+            {
+                if (!CanAcceptCurrentDrag())
+                    return;
+
+                DragAndDrop.visualMode = IsInternalDrag()
+                    ? DragAndDropVisualMode.Move
+                    : DragAndDropVisualMode.Copy;
+                groupHeader.AddToClassList(_kDragOverClass);
+                evt.StopPropagation();
+            });
+
+            groupHeader.RegisterCallback<DragPerformEvent>(evt =>
+            {
+                groupHeader.RemoveFromClassList(_kDragOverClass);
+                if (!CanAcceptCurrentDrag())
+                    return;
+
+                DragAndDrop.AcceptDrag();
+                HandleDrop(groupId);
+                evt.StopPropagation();
+            });
+
+            groupHeader.RegisterCallback<DragLeaveEvent>(evt => groupHeader.RemoveFromClassList(_kDragOverClass));
+            groupHeader.RegisterCallback<DragExitedEvent>(evt => groupHeader.RemoveFromClassList(_kDragOverClass));
+        }
+
+        private bool IsInternalDrag()
+        {
+            return DragAndDrop.GetGenericData(_kDragGenericDataKey) is string guid && !string.IsNullOrEmpty(guid);
+        }
+
+        private bool CanAcceptCurrentDrag()
+        {
+            if (IsInternalDrag())
+                return true;
+
+            var paths = DragAndDrop.paths;
+            return paths != null && paths.Any(p => !string.IsNullOrEmpty(AssetDatabase.AssetPathToGUID(p)));
+        }
+
+        private void HandleDrop(string targetGroupId)
+        {
+            var changed = false;
+
+            if (IsInternalDrag())
+            {
+                var draggedGuid = (string)DragAndDrop.GetGenericData(_kDragGenericDataKey);
+                DragAndDrop.SetGenericData(_kDragGenericDataKey, null);
+                changed = FavoriteAssetsDataManager.MoveAssetToGroup(draggedGuid, targetGroupId);
+            }
+            else
+            {
+                foreach (var path in DragAndDrop.paths)
+                {
+                    if (string.IsNullOrEmpty(AssetDatabase.AssetPathToGUID(path)))
+                        continue;
+
+                    if (FavoriteAssetsDataManager.AddFavorite(path, targetGroupId))
+                    {
+                        changed = true;
+                    }
+                    else if (targetGroupId != null && FavoriteAssetsDataManager.IsFavorite(path))
+                    {
+                        // Already a favorite - dropping it on a group moves it there
+                        var guid = AssetDatabase.AssetPathToGUID(path);
+                        changed |= FavoriteAssetsDataManager.MoveAssetToGroup(guid, targetGroupId);
+                    }
+                }
+            }
+
+            if (changed)
+            {
+                RefreshAssetsList();
+            }
+        }
+
+        private void MakeItemDraggable(VisualElement assetItem, FavoriteAssetData assetData)
+        {
+            var mouseDownPosition = Vector2.zero;
+            var isMouseDown = false;
+
+            assetItem.RegisterCallback<MouseDownEvent>(evt =>
+            {
+                if (evt.button == 0)
+                {
+                    mouseDownPosition = evt.mousePosition;
+                    isMouseDown = true;
+                }
+            });
+
+            assetItem.RegisterCallback<MouseUpEvent>(evt => isMouseDown = false);
+
+            assetItem.RegisterCallback<MouseMoveEvent>(evt =>
+            {
+                if (!isMouseDown || (evt.pressedButtons & 1) == 0)
+                    return;
+
+                if ((evt.mousePosition - mouseDownPosition).sqrMagnitude < 25f)
+                    return;
+
+                isMouseDown = false;
+
+                var asset = AssetDatabase.LoadMainAssetAtPath(assetData.AssetPath);
+                if (asset == null)
+                    return;
+
+                DragAndDrop.PrepareStartDrag();
+                DragAndDrop.objectReferences = new[] { asset };
+                DragAndDrop.paths = new[] { assetData.AssetPath };
+                DragAndDrop.SetGenericData(_kDragGenericDataKey, assetData.AssetGuid);
+                DragAndDrop.StartDrag(assetData.AssetName);
+                evt.StopPropagation();
+            });
         }
         
         private void CreateToolbar()
@@ -149,7 +299,9 @@ namespace FavoriteAssets.Editor
             groupHeader.Add(groupName);
             groupHeader.Add(countLabel);
             groupHeader.Add(deleteGroupButton);
-            
+
+            RegisterGroupDropZone(groupHeader, group.Id);
+
             _assetsList.Add(groupHeader);
         }
         
@@ -305,7 +457,7 @@ namespace FavoriteAssets.Editor
             _emptyState = new VisualElement();
             _emptyState.AddToClassList("empty-state");
             
-            var emptyText = new Label("No favorite assets yet.\n\nRight-click on assets in the Project window and select 'Add to Favorites' to get started.");
+            var emptyText = new Label("No favorite assets yet.\n\nDrag assets here from the Project window, or right-click them and select 'Add to Favorites' to get started.");
             emptyText.AddToClassList("empty-state-text");
             
             _emptyState.Add(emptyText);
@@ -475,7 +627,9 @@ namespace FavoriteAssets.Editor
                     evt.StopPropagation();
                 }
             });
-            
+
+            MakeItemDraggable(assetItem, assetData);
+
             _assetsList.Add(assetItem);
         }
         
