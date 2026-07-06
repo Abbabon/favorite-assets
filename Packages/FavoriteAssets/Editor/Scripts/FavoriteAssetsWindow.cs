@@ -253,10 +253,15 @@ namespace FavoriteAssets.Editor
             
             var clearButton = new Button(ClearAllFavorites) { text = "Clear All" };
             clearButton.AddToClassList("clear-button");
-            
+
+            var settingsButton = new Button(OpenSettings) { text = "⚙" };
+            settingsButton.AddToClassList("settings-button");
+            settingsButton.tooltip = "Open Favorite Assets preferences";
+
             rightSection.Add(createGroupButton);
             rightSection.Add(refreshButton);
             rightSection.Add(clearButton);
+            rightSection.Add(settingsButton);
             
             toolbar.Add(leftSection);
             toolbar.Add(centerSection);
@@ -335,6 +340,11 @@ namespace FavoriteAssets.Editor
             }
         }
         
+        private void OpenSettings()
+        {
+            SettingsService.OpenUserPreferences(FavoriteAssetsSettings.PreferencesPath);
+        }
+
         private void CreateNewGroup()
         {
             var groupName = $"Group {System.DateTime.Now:HH:mm:ss}";
@@ -730,11 +740,14 @@ namespace FavoriteAssets.Editor
                 if (folderAsset != null)
                 {
                     EditorGUIUtility.PingObject(folderAsset);
-                    Selection.activeObject = folderAsset;
+                    if (FavoriteAssetsSettings.SelectOnClick)
+                    {
+                        Selection.activeObject = folderAsset;
+                    }
                 }
                 return;
             }
-            
+
             // Handle regular files
             if (File.Exists(assetPath))
             {
@@ -742,7 +755,10 @@ namespace FavoriteAssets.Editor
                 if (asset != null)
                 {
                     EditorGUIUtility.PingObject(asset);
-                    Selection.activeObject = asset;
+                    if (FavoriteAssetsSettings.SelectOnClick)
+                    {
+                        Selection.activeObject = asset;
+                    }
                 }
             }
         }

@@ -116,6 +116,28 @@
     background-color: #900105;
 }
 
+.settings-button {
+    background-color: #6C7A89;
+    border-color: #5B6975;
+    color: white;
+    padding: 0;
+    margin-left: 4px;
+    font-size: 14px;
+    width: 24px;
+    height: 24px;
+    border-radius: 3px;
+    -unity-text-align: middle-center;
+}
+
+.settings-button:hover {
+    background-color: #5B6975;
+    border-color: #4A5861;
+}
+
+.settings-button:active {
+    background-color: #4A5861;
+}
+
 .create-group-button {
     background-color: #9B59B6;
     border-color: #8E44AD;
