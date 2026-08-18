@@ -6,6 +6,7 @@
 
 .toolbar {
     flex-direction: row;
+    flex-wrap: wrap;
     justify-content: space-between;
     align-items: center;
     padding: 2px;
@@ -22,15 +23,18 @@
 .toolbar-center {
     flex-direction: row;
     align-items: center;
-    margin: 0 8px;
+    flex-shrink: 0;
+    margin: 0 8px 0 0;
 }
 
 .toolbar-right {
     flex-direction: row;
     align-items: center;
+    flex-shrink: 0;
 }
 
 .sort-label {
+    flex-shrink: 0;
     font-size: 11px;
     color: rgba(255, 255, 255, 0.7);
     margin-right: 4px;
@@ -38,6 +42,7 @@
 }
 
 .sort-type-button {
+    flex-shrink: 0;
     background-color: #4A90E2;
     border-color: #3A7BC8;
     color: white;
@@ -58,6 +63,7 @@
 }
 
 .sort-order-button {
+    flex-shrink: 0;
     background-color: #7ED321;
     border-color: #6BBF1A;
     color: white;
@@ -80,6 +86,7 @@
 
 
 .refresh-button {
+    flex-shrink: 0;
     background-color: #50E3C2;
     border-color: #3FD4AB;
     color: white;
@@ -99,6 +106,7 @@
 }
 
 .clear-button {
+    flex-shrink: 0;
     background-color: #D0021B;
     border-color: #B0010F;
     color: white;
@@ -139,6 +147,7 @@
 }
 
 .create-group-button {
+    flex-shrink: 0;
     background-color: #9B59B6;
     border-color: #8E44AD;
     color: white;
@@ -366,4 +375,121 @@
 .group-header.drag-over {
     background-color: rgba(100, 149, 237, 0.5);
     border-color: rgba(100, 149, 237, 1);
+}
+
+/* --- Tabs --- */
+
+.tab-bar {
+    flex-direction: row;
+    align-items: center;
+    padding: 2px 2px 4px 2px;
+}
+
+.tab-strip {
+    flex-direction: row;
+    align-items: center;
+    flex-grow: 1;
+}
+
+/* Tabs share the width evenly and truncate rather than overlap when the window is narrow. */
+.tab-button {
+    background-color: rgba(255, 255, 255, 0.06);
+    border-color: rgba(0, 0, 0, 0.3);
+    color: rgba(255, 255, 255, 0.6);
+    padding: 4px 10px;
+    margin-right: 2px;
+    font-size: 11px;
+    border-radius: 3px;
+    flex-grow: 1;
+    flex-shrink: 1;
+    flex-basis: 0;
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+}
+
+.tab-button:hover {
+    background-color: rgba(255, 255, 255, 0.12);
+    color: rgba(255, 255, 255, 0.85);
+}
+
+.tab-button:active {
+    background-color: rgba(255, 255, 255, 0.18);
+}
+
+.tab-button-active {
+    background-color: #4A90E2;
+    border-color: #3A7BC8;
+    color: white;
+}
+
+.tab-button-active:hover {
+    background-color: #4A90E2;
+    border-color: #3A7BC8;
+    color: white;
+}
+
+.tab-button-active:active {
+    background-color: #3A7BC8;
+}
+
+.toolbar-actions {
+    flex-direction: row;
+    align-items: center;
+}
+
+/* --- Views --- */
+
+.favorites-view {
+    flex-direction: column;
+    flex-grow: 1;
+}
+
+.history-view {
+    flex-direction: column;
+    flex-grow: 1;
+}
+
+.history-list {
+    flex-grow: 1;
+}
+
+/* --- History rows --- */
+
+.history-time {
+    font-size: 9px;
+    color: rgba(255, 255, 255, 0.5);
+    margin-left: 4px;
+    flex-shrink: 0;
+    pointer-events: none;
+}
+
+.favorite-toggle-button {
+    width: 18px;
+    height: 18px;
+    background-color: rgba(0, 0, 0, 0);
+    border-color: rgba(0, 0, 0, 0);
+    color: rgba(255, 255, 255, 0.4);
+    margin-left: 4px;
+    padding: 0;
+    font-size: 12px;
+    flex-shrink: 0;
+    -unity-text-align: middle-center;
+}
+
+.favorite-toggle-button:hover {
+    color: #F5C518;
+    background-color: rgba(255, 255, 255, 0.1);
+}
+
+.favorite-toggle-button-on {
+    color: #F5C518;
+}
+
+.asset-item-missing {
+    opacity: 0.45;
+}
+
+.asset-item-missing .asset-name {
+    color: rgba(220, 53, 69, 0.9);
 }

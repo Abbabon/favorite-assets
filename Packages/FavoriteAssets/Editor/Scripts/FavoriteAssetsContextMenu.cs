@@ -26,11 +26,8 @@ namespace FavoriteAssets.Editor
             {
                 Debug.Log($"Added {addedCount} asset(s) to favorites.");
                 
-                var window = EditorWindow.GetWindow<FavoriteAssetsWindow>();
-                if (window != null)
-                {
-                    window.RefreshWindow();
-                }
+                // Refresh any open window without forcing one open.
+                FavoriteAssetsWindow.RefreshOpenWindows();
             }
             else
             {
@@ -82,11 +79,8 @@ namespace FavoriteAssets.Editor
             {
                 Debug.Log($"Removed {removedCount} asset(s) from favorites.");
                 
-                var window = EditorWindow.GetWindow<FavoriteAssetsWindow>();
-                if (window != null)
-                {
-                    window.RefreshWindow();
-                }
+                // Refresh any open window without forcing one open.
+                FavoriteAssetsWindow.RefreshOpenWindows();
             }
         }
         

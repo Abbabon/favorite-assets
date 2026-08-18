@@ -10,26 +10,58 @@ namespace FavoriteAssets.Editor
 {
     public class FavoriteAssetsWindow : EditorWindow
     {
+        private enum WindowTab
+        {
+            Favorites,
+            History
+        }
+        
         private VisualElement _rootElement;
+        private VisualElement _favoritesView;
+        private VisualElement _historyView;
         private ScrollView _assetsList;
+        private ScrollView _historyList;
         private VisualElement _emptyState;
+        private VisualElement _historyEmptyState;
+        private Label _historyEmptyStateText;
         private Label _statusLabel;
         private Button _sortTypeButton;
         private Button _sortOrderButton;
+        private Button _favoritesTabButton;
+        private Button _historyTabButton;
+        private VisualElement _sortSection;
+        private VisualElement _favoritesActions;
+        private VisualElement _historyActions;
         
         private FavoriteSortType _currentSortType = FavoriteSortType.Name;
         private SortOrder _currentSortOrder = SortOrder.Ascending;
+        
+        // Serialized so the active tab survives domain reloads and is stored in the saved window layout.
+        [SerializeField] private WindowTab _activeTab = WindowTab.Favorites;
 
         private const string _kDragGenericDataKey = "FavoriteAssets.DraggedGuid";
         private const string _kDragOverClass = "drag-over";
+        private const string _kTabActiveClass = "tab-button-active";
         
         private void OnFocus()
         {
-            // Refresh the list when the window gains focus to update file modification dates
-            // This will also automatically clean up any deleted assets
-            if (_assetsList != null)
+            // Refresh when the window gains focus to update file modification dates.
+            // This will also automatically clean up any deleted assets.
+            if (_rootElement != null)
             {
-                RefreshAssetsList();
+                RefreshActiveTab();
+            }
+        }
+        
+        /// <summary>
+        /// Refreshes every open Favorites window without creating one.
+        /// Deliberately not GetWindow&lt;T&gt;(), which would pop the window open when a prefab is opened.
+        /// </summary>
+        public static void RefreshOpenWindows()
+        {
+            foreach (var window in Resources.FindObjectsOfTypeAll<FavoriteAssetsWindow>())
+            {
+                window.RefreshWindow();
             }
         }
         
@@ -45,7 +77,7 @@ namespace FavoriteAssets.Editor
         {
             if (_rootElement != null && _rootElement.parent != null)
             {
-                RefreshAssetsList();
+                RefreshActiveTab();
                 return;
             }
             
@@ -59,14 +91,47 @@ namespace FavoriteAssets.Editor
                 _rootElement.styleSheets.Add(styleSheet);
             }
             
+            CreateTabBar();
             CreateToolbar();
-            CreateAssetsList();
-            CreateEmptyState();
+            CreateFavoritesView();
+            CreateHistoryView();
             CreateStatusBar();
 
             RegisterWindowDropZone();
 
-            RefreshAssetsList();
+            // CreateGUI runs after deserialization, so _activeTab is already restored here.
+            SetActiveTab(_activeTab);
+        }
+        
+        private void SetActiveTab(WindowTab tab)
+        {
+            _activeTab = tab;
+            var isFavorites = tab == WindowTab.Favorites;
+            
+            _favoritesView.style.display = isFavorites ? DisplayStyle.Flex : DisplayStyle.None;
+            _historyView.style.display = isFavorites ? DisplayStyle.None : DisplayStyle.Flex;
+            _sortSection.style.display = isFavorites ? DisplayStyle.Flex : DisplayStyle.None;
+            _favoritesActions.style.display = isFavorites ? DisplayStyle.Flex : DisplayStyle.None;
+            _historyActions.style.display = isFavorites ? DisplayStyle.None : DisplayStyle.Flex;
+            
+            _favoritesTabButton.EnableInClassList(_kTabActiveClass, isFavorites);
+            _historyTabButton.EnableInClassList(_kTabActiveClass, !isFavorites);
+            
+            RefreshActiveTab();
+        }
+        
+        private void RefreshActiveTab()
+        {
+            if (_rootElement == null) return;
+            
+            if (_activeTab == WindowTab.Favorites)
+            {
+                RefreshAssetsList();
+            }
+            else
+            {
+                RefreshHistoryList();
+            }
         }
 
         private void RegisterWindowDropZone()
@@ -132,6 +197,10 @@ namespace FavoriteAssets.Editor
 
         private bool CanAcceptCurrentDrag()
         {
+            // Dropping while the History tab is showing would add favorites the user cannot see.
+            if (_activeTab != WindowTab.Favorites)
+                return false;
+            
             if (IsInternalDrag())
                 return true;
 
@@ -219,13 +288,9 @@ namespace FavoriteAssets.Editor
             var toolbar = new VisualElement();
             toolbar.AddToClassList("toolbar");
             
-            var leftSection = new VisualElement();
-            leftSection.AddToClassList("toolbar-left");
-            
-            // Remove title and count from toolbar - will be moved to status bar
-            
             var centerSection = new VisualElement();
             centerSection.AddToClassList("toolbar-center");
+            _sortSection = centerSection;
             
             var sortLabel = new Label("Sort:");
             sortLabel.AddToClassList("sort-label");
@@ -248,26 +313,60 @@ namespace FavoriteAssets.Editor
             var createGroupButton = new Button(CreateNewGroup) { text = "+ Group" };
             createGroupButton.AddToClassList("create-group-button");
             
-            var refreshButton = new Button(RefreshAssetsList) { text = "Refresh" };
+            var refreshButton = new Button(RefreshActiveTab) { text = "Refresh" };
             refreshButton.AddToClassList("refresh-button");
             
             var clearButton = new Button(ClearAllFavorites) { text = "Clear All" };
             clearButton.AddToClassList("clear-button");
+            
+            var clearHistoryButton = new Button(ClearPrefabHistory) { text = "Clear History" };
+            clearHistoryButton.AddToClassList("clear-button");
 
             var settingsButton = new Button(OpenSettings) { text = "⚙" };
             settingsButton.AddToClassList("settings-button");
             settingsButton.tooltip = "Open Favorite Assets preferences";
+            
+            _favoritesActions = new VisualElement();
+            _favoritesActions.AddToClassList("toolbar-actions");
+            _favoritesActions.Add(createGroupButton);
+            _favoritesActions.Add(clearButton);
+            
+            _historyActions = new VisualElement();
+            _historyActions.AddToClassList("toolbar-actions");
+            _historyActions.Add(clearHistoryButton);
 
-            rightSection.Add(createGroupButton);
+            rightSection.Add(_favoritesActions);
+            rightSection.Add(_historyActions);
             rightSection.Add(refreshButton);
-            rightSection.Add(clearButton);
             rightSection.Add(settingsButton);
             
-            toolbar.Add(leftSection);
             toolbar.Add(centerSection);
             toolbar.Add(rightSection);
             
             _rootElement.Add(toolbar);
+        }
+        
+        private void CreateTabBar()
+        {
+            // The tabs get a row of their own. Sharing the toolbar row made them overlap the sort
+            // controls as soon as the window was docked narrow.
+            var tabBar = new VisualElement();
+            tabBar.AddToClassList("tab-bar");
+            
+            var tabStrip = new VisualElement();
+            tabStrip.AddToClassList("tab-strip");
+            
+            _favoritesTabButton = new Button(() => SetActiveTab(WindowTab.Favorites)) { text = "Favorites" };
+            _favoritesTabButton.AddToClassList("tab-button");
+            
+            _historyTabButton = new Button(() => SetActiveTab(WindowTab.History)) { text = "Prefab History" };
+            _historyTabButton.AddToClassList("tab-button");
+            _historyTabButton.tooltip = "Prefabs you have opened in Prefab Mode, most recent first";
+            
+            tabStrip.Add(_favoritesTabButton);
+            tabStrip.Add(_historyTabButton);
+            tabBar.Add(tabStrip);
+            _rootElement.Add(tabBar);
         }
         
         private void CreateGroupHeader(FavoriteGroup group)
@@ -455,31 +554,55 @@ namespace FavoriteAssets.Editor
         }
         
         
-        private void CreateAssetsList()
+        private void CreateFavoritesView()
         {
+            // The favorites list and its empty state share a wrapper so that the tab switcher toggles
+            // one element while RefreshAssetsList keeps owning the list-vs-empty-state toggle.
+            _favoritesView = new VisualElement();
+            _favoritesView.AddToClassList("favorites-view");
+            
             _assetsList = new ScrollView();
             _assetsList.AddToClassList("assets-list");
-            _rootElement.Add(_assetsList);
-        }
-        
-        private void CreateEmptyState()
-        {
+            
             _emptyState = new VisualElement();
             _emptyState.AddToClassList("empty-state");
             
             var emptyText = new Label("No favorite assets yet.\n\nDrag assets here from the Project window, or right-click them and select 'Add to Favorites' to get started.");
             emptyText.AddToClassList("empty-state-text");
-            
             _emptyState.Add(emptyText);
-            _rootElement.Add(_emptyState);
+            
+            _favoritesView.Add(_assetsList);
+            _favoritesView.Add(_emptyState);
+            _rootElement.Add(_favoritesView);
+        }
+        
+        private void CreateHistoryView()
+        {
+            _historyView = new VisualElement();
+            _historyView.AddToClassList("history-view");
+            
+            _historyList = new ScrollView();
+            _historyList.AddToClassList("history-list");
+            
+            _historyEmptyState = new VisualElement();
+            _historyEmptyState.AddToClassList("empty-state");
+            
+            _historyEmptyStateText = new Label();
+            _historyEmptyStateText.AddToClassList("empty-state-text");
+            _historyEmptyState.Add(_historyEmptyStateText);
+            
+            _historyView.Add(_historyList);
+            _historyView.Add(_historyEmptyState);
+            _rootElement.Add(_historyView);
         }
         
         public void RefreshWindow()
         {
-            if (_assetsList != null)
-            {
-                RefreshAssetsList();
-            }
+            // RefreshOpenWindows can reach a window whose CreateGUI has not run yet, which is a real
+            // state right after a domain reload.
+            if (_rootElement == null) return;
+            
+            RefreshActiveTab();
         }
         
         private void RefreshAssetsList()
@@ -577,9 +700,12 @@ namespace FavoriteAssets.Editor
                 assetItem.AddToClassList("asset-item-grouped");
             }
             
+            // Use the GUID-resolved path so a favorite that was moved or renamed still resolves.
+            var currentPath = assetData.CurrentPath;
+            
             var icon = new Image();
             icon.AddToClassList("asset-icon");
-            var texture = AssetDatabase.GetCachedIcon(assetData.AssetPath);
+            var texture = AssetDatabase.GetCachedIcon(currentPath);
             if (texture != null)
             {
                 icon.image = texture;
@@ -591,7 +717,7 @@ namespace FavoriteAssets.Editor
             var assetName = new Label(assetData.AssetName);
             assetName.AddToClassList("asset-name");
             
-            var assetPath = new Label(assetData.AssetPath);
+            var assetPath = new Label(currentPath);
             assetPath.AddToClassList("asset-path");
             
             assetInfo.Add(assetName);
@@ -618,11 +744,11 @@ namespace FavoriteAssets.Editor
                     
                     if (evt.clickCount == 2)
                     {
-                        OpenAsset(assetData.AssetPath);
+                        OpenAsset(currentPath);
                     }
                     else if (evt.clickCount == 1)
                     {
-                        HighlightAssetInProject(assetData.AssetPath);
+                        HighlightAssetInProject(currentPath);
                     }
                     evt.StopPropagation();
                 }
@@ -641,6 +767,210 @@ namespace FavoriteAssets.Editor
             MakeItemDraggable(assetItem, assetData);
 
             _assetsList.Add(assetItem);
+        }
+        
+        private void RefreshHistoryList()
+        {
+            if (_historyList == null) return;
+            
+            _historyList.Clear();
+            
+            // History is a log, not a curated list: unlike favorites it is never pruned here.
+            // Entries whose prefab no longer exists are shown greyed out instead.
+            var entries = PrefabHistoryManager.GetEntries();
+            var missingCount = entries.Count(e => !e.IsValid());
+            
+            SetStatusText(BuildHistoryStatusText(entries.Count, missingCount));
+            
+            if (entries.Count == 0)
+            {
+                _historyList.style.display = DisplayStyle.None;
+                _historyEmptyState.style.display = DisplayStyle.Flex;
+                _historyEmptyStateText.text = FavoriteAssetsSettings.RecordPrefabHistory
+                    ? "No prefabs opened yet.\n\nOpen any prefab in Prefab Mode and it will show up here."
+                    : "Prefab history recording is turned off.\n\nEnable it in Preferences \u2192 Favorite Assets.";
+                return;
+            }
+            
+            _historyList.style.display = DisplayStyle.Flex;
+            _historyEmptyState.style.display = DisplayStyle.None;
+            
+            foreach (var entry in entries)
+            {
+                CreateHistoryItem(entry);
+            }
+        }
+        
+        private static string BuildHistoryStatusText(int total, int missing)
+        {
+            var label = total == 1 ? "1 prefab in history" : $"{total} prefabs in history";
+            return missing > 0 ? $"{label} ({missing} missing)" : label;
+        }
+        
+        private void CreateHistoryItem(PrefabHistoryEntry entry)
+        {
+            var path = entry.CurrentPath;
+            var isValid = entry.IsValid();
+            
+            var historyItem = new VisualElement();
+            historyItem.AddToClassList("asset-item");
+            historyItem.AddToClassList("history-item");
+            if (!isValid)
+            {
+                historyItem.AddToClassList("asset-item-missing");
+                historyItem.tooltip = $"This prefab no longer exists at {path}";
+            }
+            
+            var icon = new Image();
+            icon.AddToClassList("asset-icon");
+            var texture = AssetDatabase.GetCachedIcon(path);
+            if (texture == null)
+            {
+                texture = EditorGUIUtility.IconContent("Prefab Icon").image;
+            }
+            if (texture != null)
+            {
+                icon.image = texture;
+            }
+            
+            var assetInfo = new VisualElement();
+            assetInfo.AddToClassList("asset-info");
+            
+            var assetName = new Label(entry.PrefabName);
+            assetName.AddToClassList("asset-name");
+            
+            var assetPath = new Label(path);
+            assetPath.AddToClassList("asset-path");
+            
+            assetInfo.Add(assetName);
+            assetInfo.Add(assetPath);
+            
+            var timeLabel = new Label(FormatRelativeTime(entry.LastOpened));
+            timeLabel.AddToClassList("history-time");
+            timeLabel.tooltip = entry.LastOpened.ToString("f");
+            
+            var isFavorite = FavoriteAssetsDataManager.IsFavoriteByGuid(entry.PrefabGuid);
+            var favoriteButton = new Button(() => ToggleFavoriteFromHistory(entry)) { text = isFavorite ? "\u2605" : "\u2606" };
+            favoriteButton.AddToClassList("favorite-toggle-button");
+            favoriteButton.EnableInClassList("favorite-toggle-button-on", isFavorite);
+            favoriteButton.tooltip = isFavorite ? "Remove from favorites" : "Add to favorites";
+            
+            var removeButton = new Button(() => RemoveFromHistory(entry.PrefabGuid)) { text = "\u00d7" };
+            removeButton.AddToClassList("remove-button");
+            removeButton.tooltip = "Remove from history";
+            
+            historyItem.Add(icon);
+            historyItem.Add(assetInfo);
+            historyItem.Add(timeLabel);
+            historyItem.Add(favoriteButton);
+            historyItem.Add(removeButton);
+            
+            historyItem.RegisterCallback<MouseDownEvent>(evt =>
+            {
+                if (evt.button == 0)
+                {
+                    if (evt.clickCount == 2)
+                    {
+                        OpenPrefabFromHistory(entry);
+                    }
+                    else if (evt.clickCount == 1)
+                    {
+                        HighlightAssetInProject(path);
+                    }
+                    evt.StopPropagation();
+                }
+            });
+            
+            historyItem.RegisterCallback<MouseDownEvent>(evt =>
+            {
+                if (evt.button == 1)
+                {
+                    ShowHistoryContextMenu(entry);
+                    evt.StopPropagation();
+                }
+            });
+            
+            _historyList.Add(historyItem);
+        }
+        
+        private void ShowHistoryContextMenu(PrefabHistoryEntry entry)
+        {
+            var menu = new GenericMenu();
+            var path = entry.CurrentPath;
+            
+            if (entry.IsValid())
+            {
+                menu.AddItem(new GUIContent("Open in Prefab Mode"), false, () => OpenPrefabFromHistory(entry));
+                menu.AddItem(new GUIContent("Ping in Project"), false, () => HighlightAssetInProject(path));
+                menu.AddSeparator("");
+                
+                if (FavoriteAssetsDataManager.IsFavoriteByGuid(entry.PrefabGuid))
+                {
+                    menu.AddItem(new GUIContent("Remove from Favorites"), false, () => ToggleFavoriteFromHistory(entry));
+                }
+                else
+                {
+                    menu.AddItem(new GUIContent("Add to Favorites"), false, () => ToggleFavoriteFromHistory(entry));
+                }
+                
+                menu.AddSeparator("");
+            }
+            
+            menu.AddItem(new GUIContent("Remove from History"), false, () => RemoveFromHistory(entry.PrefabGuid));
+            menu.ShowAsContext();
+        }
+        
+        private void ToggleFavoriteFromHistory(PrefabHistoryEntry entry)
+        {
+            if (FavoriteAssetsDataManager.IsFavoriteByGuid(entry.PrefabGuid))
+            {
+                FavoriteAssetsDataManager.RemoveFavorite(entry.PrefabGuid);
+            }
+            else
+            {
+                FavoriteAssetsDataManager.AddFavorite(entry.CurrentPath);
+            }
+            
+            RefreshActiveTab();
+        }
+        
+        private void RemoveFromHistory(string prefabGuid)
+        {
+            if (PrefabHistoryManager.Remove(prefabGuid))
+            {
+                RefreshHistoryList();
+            }
+        }
+        
+        private void OpenPrefabFromHistory(PrefabHistoryEntry entry)
+        {
+            var path = entry.CurrentPath;
+            
+            if (!entry.IsValid())
+            {
+                if (EditorUtility.DisplayDialog("Prefab Not Found",
+                    $"'{entry.PrefabName}' no longer exists at {path}.",
+                    "Remove from History", "Keep"))
+                {
+                    RemoveFromHistory(entry.PrefabGuid);
+                }
+                return;
+            }
+            
+            UnityEditor.SceneManagement.PrefabStageUtility.OpenPrefab(path);
+        }
+        
+        private static string FormatRelativeTime(DateTime timestamp)
+        {
+            var elapsed = DateTime.Now - timestamp;
+            
+            if (elapsed.TotalSeconds < 60) return "just now";
+            if (elapsed.TotalMinutes < 60) return $"{(int)elapsed.TotalMinutes}m ago";
+            if (elapsed.TotalHours < 24) return $"{(int)elapsed.TotalHours}h ago";
+            if (elapsed.TotalDays < 2) return "yesterday";
+            if (elapsed.TotalDays < 7) return $"{(int)elapsed.TotalDays}d ago";
+            
+            return timestamp.ToString("MMM d");
         }
         
         private void CreateStatusBar()
@@ -706,7 +1036,15 @@ namespace FavoriteAssets.Editor
         
         private void UpdateStatusLabel(int count)
         {
-            _statusLabel.text = count == 1 ? "1 favorite asset" : $"{count} favorite assets";
+            SetStatusText(count == 1 ? "1 favorite asset" : $"{count} favorite assets");
+        }
+        
+        private void SetStatusText(string text)
+        {
+            if (_statusLabel != null)
+            {
+                _statusLabel.text = text;
+            }
         }
         
         private void RemoveFavorite(string assetGuid)
@@ -725,6 +1063,23 @@ namespace FavoriteAssets.Editor
             {
                 FavoriteAssetsDataManager.ClearAll();
                 RefreshAssetsList();
+            }
+        }
+        
+        private void ClearPrefabHistory()
+        {
+            var count = PrefabHistoryManager.Count;
+            if (count == 0)
+                return;
+            
+            if (EditorUtility.DisplayDialog("Clear Prefab History",
+                count == 1
+                    ? "Are you sure you want to remove the single entry from the prefab history?"
+                    : $"Are you sure you want to remove all {count} entries from the prefab history?",
+                "Clear", "Cancel"))
+            {
+                PrefabHistoryManager.ClearAll();
+                RefreshHistoryList();
             }
         }
         
