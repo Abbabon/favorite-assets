@@ -16,6 +16,28 @@ namespace FavoriteAssets.Editor
         [SerializeField] private long _dateUpdatedTicks;
         
         public string AssetPath => _assetPath;
+        
+        /// <summary>
+        /// The asset's live path, resolved from the GUID so that moved and renamed assets keep working.
+        /// Falls back to the path recorded when the favorite was added if the GUID no longer resolves.
+        /// </summary>
+        public string CurrentPath
+        {
+            get
+            {
+                try
+                {
+                    var pathFromGuid = UnityEditor.AssetDatabase.GUIDToAssetPath(_assetGuid);
+                    if (!string.IsNullOrEmpty(pathFromGuid))
+                        return pathFromGuid;
+                }
+                catch
+                {
+                    // Fall through to the recorded path.
+                }
+                return _assetPath;
+            }
+        }
         public string AssetName => _assetName;
         public string AssetType => _assetType;
         public string AssetGuid => _assetGuid;
@@ -29,13 +51,14 @@ namespace FavoriteAssets.Editor
             {
                 try
                 {
-                    if (File.Exists(_assetPath))
+                    var path = CurrentPath;
+                    if (File.Exists(path))
                     {
-                        return File.GetLastWriteTime(_assetPath);
+                        return File.GetLastWriteTime(path);
                     }
-                    if (Directory.Exists(_assetPath))
+                    if (Directory.Exists(path))
                     {
-                        return Directory.GetLastWriteTime(_assetPath);
+                        return Directory.GetLastWriteTime(path);
                     }
                 }
                 catch
@@ -70,19 +93,18 @@ namespace FavoriteAssets.Editor
         
         public bool IsValid()
         {
-            if (string.IsNullOrEmpty(_assetPath) || string.IsNullOrEmpty(_assetGuid))
+            if (string.IsNullOrEmpty(_assetGuid))
                 return false;
                 
-            // Check if the asset still exists in the project
             try
             {
-                // Check if the GUID still points to a valid asset
+                // Resolve through the GUID rather than the stored path, so that an asset moved or
+                // renamed in the Project window stays a favorite.
                 var pathFromGuid = UnityEditor.AssetDatabase.GUIDToAssetPath(_assetGuid);
                 if (string.IsNullOrEmpty(pathFromGuid))
                     return false;
                 
-                // Check if the file/folder actually exists on disk
-                return File.Exists(_assetPath) || Directory.Exists(_assetPath);
+                return File.Exists(pathFromGuid) || Directory.Exists(pathFromGuid);
             }
             catch
             {

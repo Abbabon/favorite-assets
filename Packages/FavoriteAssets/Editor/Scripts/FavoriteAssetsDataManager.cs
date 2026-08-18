@@ -309,27 +309,46 @@ namespace FavoriteAssets.Editor
                 var dataPath = GetDataPath();
                 if (File.Exists(dataPath))
                 {
-                    try
-                    {
-                        var json = File.ReadAllText(dataPath);
-                        var wrapper = JsonUtility.FromJson<FavoriteAssetsWrapper>(json);
-                        if (wrapper != null)
-                        {
-                            if (wrapper.favorites != null)
-                            {
-                                _favoriteAssets = wrapper.favorites.Where(f => f.IsValid()).ToList();
-                            }
-                            if (wrapper.groups != null)
-                            {
-                                _favoriteGroups = wrapper.groups.ToList();
-                            }
-                        }
-                    }
-                    catch (System.Exception e)
-                    {
-                        Debug.LogWarning($"Failed to load favorite assets data: {e.Message}");
-                    }
+                    ReadInto(dataPath);
+                    return;
                 }
+                
+                // No per-project data yet. Favorites used to live in a single machine-wide file, which
+                // meant opening a second project pruned the first project's favorites away. Migrate the
+                // entries that belong to this project and leave the legacy file alone so that other
+                // projects can still migrate their own share.
+                var legacyPath = GetLegacyDataPath();
+                if (File.Exists(legacyPath))
+                {
+                    ReadInto(legacyPath);
+                    SaveFavorites();
+                    Debug.Log($"Favorite Assets: migrated favorites for this project from \"{legacyPath}\" to \"{dataPath}\". The old file was left in place for your other projects.");
+                }
+            }
+        }
+        
+        private static void ReadInto(string dataPath)
+        {
+            try
+            {
+                var json = File.ReadAllText(dataPath);
+                var wrapper = JsonUtility.FromJson<FavoriteAssetsWrapper>(json);
+                if (wrapper == null) return;
+                
+                if (wrapper.favorites != null)
+                {
+                    // IsValid() resolves the GUID against the current project, so this also drops
+                    // any entry belonging to a different project when reading the legacy file.
+                    _favoriteAssets = wrapper.favorites.Where(f => f.IsValid()).ToList();
+                }
+                if (wrapper.groups != null)
+                {
+                    _favoriteGroups = wrapper.groups.ToList();
+                }
+            }
+            catch (System.Exception e)
+            {
+                Debug.LogWarning($"Failed to load favorite assets data: {e.Message}");
             }
         }
         
@@ -358,6 +377,15 @@ namespace FavoriteAssets.Editor
         }
         
         private static string GetDataPath()
+        {
+            // Per project and per user: Application.dataPath is <project>/Assets, so its parent is the
+            // project root. UserSettings/ is covered by Unity's standard .gitignore and survives a
+            // Library wipe.
+            var projectRoot = Path.GetDirectoryName(Application.dataPath);
+            return Path.Combine(projectRoot, "UserSettings", _kDataFileName);
+        }
+        
+        private static string GetLegacyDataPath()
         {
             return Path.Combine(Application.persistentDataPath, "Editor", _kDataFileName);
         }
