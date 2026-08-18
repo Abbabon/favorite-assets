@@ -4,9 +4,18 @@ A Unity Editor tool that allows you to mark Unity assets and folders as favorite
 
 [![openupm](https://img.shields.io/npm/v/com.mezookan.favorite-assets?label=openupm&registry_uri=https://package.openupm.com)](https://openupm.com/packages/com.mezookan.favorite-assets/)
 
+<p align="center">
+  <img src="docs/images/favorites-tab.png" alt="The Favorite Assets window showing ungrouped favorites above two collapsible groups" width="640">
+</p>
+
 ## Table of Contents
 
 - [Features](#features)
+  - [Asset Organization](#-asset-organization)
+  - [Quick Access & Navigation](#-quick-access--navigation)
+  - [Prefab History](#-prefab-history)
+  - [Advanced Controls](#-advanced-controls)
+  - [Reliability & Performance](#-reliability--performance)
 - [Installation](#installation)
   - [Method 1: OpenUPM (Recommended)](#method-1-openupm-recommended)
   - [Method 2: Package Manager (Git URL)](#method-2-package-manager-git-url)
@@ -15,8 +24,11 @@ A Unity Editor tool that allows you to mark Unity assets and folders as favorite
 - [Requirements](#requirements)
 - [Usage](#usage)
   - [Adding Favorites](#adding-favorites)
-  - [Viewing Favorites](#viewing-favorites)
-  - [Managing Favorites](#managing-favorites)
+  - [Opening the Window](#opening-the-window)
+  - [Working with Groups](#working-with-groups)
+  - [Using Prefab History](#using-prefab-history)
+  - [Sorting & Filtering](#sorting--filtering)
+  - [Preferences](#preferences)
 - [Technical Details](#technical-details)
 - [Uninstallation](#uninstallation)
 - [License](#license)
@@ -38,6 +50,11 @@ A Unity Editor tool that allows you to mark Unity assets and folders as favorite
 - **Visual Hierarchy**: Groups have distinctive blue headers with expand/collapse arrows
 
 ### 🕒 **Prefab History**
+
+<p align="center">
+  <img src="docs/images/prefab-history-tab.png" alt="The Prefab History tab listing recently opened prefabs newest first, with relative timestamps and star buttons" width="640">
+</p>
+
 - **Automatic Tracking**: Every prefab you open in Prefab Mode is recorded automatically, newest first
 - **Second Tab**: Lives alongside Favorites in the same window — switch with the tab bar at the top
 - **Quick Return**: Single-click to ping a prefab in the Project window, double-click to reopen it in Prefab Mode
@@ -169,6 +186,10 @@ Add this to your `manifest.json` file located in the `Packages` folder of your p
 4. Prefabs that no longer exist stay in the list but are greyed out — history is a log, so it is never pruned behind your back
 5. Recording and the entry cap are configurable in **Edit → Preferences → Favorite Assets**
 
+<p align="center">
+  <img src="docs/images/prefab-history-tab.png" alt="The Prefab History tab" width="620">
+</p>
+
 ### Sorting & Filtering
 - **Sorting Controls**:
   - 🔵 **Blue Button**: Click to cycle through sorting options (Name → Type → Added → Modified)
@@ -181,6 +202,20 @@ Add this to your `manifest.json` file located in the `Packages` folder of your p
   - Bottom status bar shows total count of all favorite assets
   - Group headers show count of assets in each group
 - **Automatic Cleanup**: Deleted assets are automatically removed when the window refreshes or gains focus
+
+### Preferences
+
+Open **Edit → Preferences → Favorite Assets**, or click the ⚙ button in the window toolbar.
+
+<p align="center">
+  <img src="docs/images/preferences.png" alt="The Favorite Assets preferences page showing Select Asset on Click, Record Prefab History, and Max History Entries" width="720">
+</p>
+
+| Setting | Default | What it does |
+| --- | --- | --- |
+| **Select Asset on Click** | Off | When off, single-clicking a favorite only pings it in the Project window. Turn it on to also select it, so it shows in the Inspector. |
+| **Record Prefab History** | On | Turn off to stop recording prefabs you open in Prefab Mode. Existing history is kept. |
+| **Max History Entries** | 20 | How many prefabs the history keeps before dropping the oldest (5–200). Lowering this trims the list immediately. |
 
 ## Technical Details
 
