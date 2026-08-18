@@ -53,13 +53,20 @@ Packages/FavoriteAssets/
 │       ├── FavoriteAssetData.cs
 │       ├── FavoriteAssetsContextMenu.cs
 │       ├── FavoriteAssetsDataManager.cs
-│       └── FavoriteAssetsWindow.cs
+│       ├── FavoriteAssetsSettings.cs
+│       ├── FavoriteAssetsWindow.cs
+│       ├── FavoriteGroup.cs
+│       ├── PrefabHistoryEntry.cs
+│       ├── PrefabHistoryManager.cs
+│       └── PrefabHistoryTracker.cs
 ```
 
 ## Important Notes
 
-- Data persistence uses JSON serialization to persistent data path (survives Unity restarts)
+- Data persistence uses JSON serialization to `<project>/UserSettings/` — per project and per user, so favorites are never shared between projects (survives Unity restarts). Data written by versions before 1.5.0 to `Application.persistentDataPath` is migrated on first load.
 - Thread-safe data access using lock objects in DataManager
 - Handles both files and folders as favorites
-- GUID-based tracking ensures favorites persist even if assets move
+- GUID-based tracking ensures favorites persist even if assets move (`FavoriteAssetData.CurrentPath` / `IsValid()` resolve through the GUID, never the stored path)
+- Prefab history is a separate concern: `PrefabHistoryTracker` (`[InitializeOnLoad]`) hooks `PrefabStage.prefabStageOpened`, `PrefabHistoryManager` persists it, and `FavoriteAssetsWindow` renders it as a second tab. Unlike favorites, history entries are never auto-pruned — missing prefabs are greyed out instead.
+- `FavoriteAssetsWindow.RefreshOpenWindows()` is the refresh channel; never use `GetWindow<T>()` from a background hook, it creates the window
 - Asset validation on load filters out invalid/missing assets

@@ -5,6 +5,24 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.5.0] - 2026-08-18
+
+### Added
+- **Prefab History tab**: the Favorites window now has two tabs — Favorites and Prefab History
+- Every prefab you open in Prefab Mode is recorded automatically, newest first; click an entry to ping it, double-click to reopen it in Prefab Mode
+- Star any history entry to add it straight to Favorites
+- New preferences: **Record Prefab History** (on by default) and **Max History Entries** (default 20)
+
+### Changed
+- Favorites and prefab history are now stored **per project** under `UserSettings/`, not in a single machine-wide file. Existing favorites are migrated automatically the first time each project opens; the old file is left in place for your other projects.
+- The window remembers which tab you were on across domain reloads and editor restarts
+- The toolbar now wraps and the tabs share the width evenly, so the window stays readable when docked narrow
+
+### Fixed
+- Favorites are no longer deleted when you open a different Unity project on the same machine
+- Moving or renaming a favorited asset no longer removes it from Favorites
+- Adding or removing favorites from the Project window context menu no longer force-opens the Favorites window if it was closed
+
 ## [1.4.0] - 2026-07-06
 
 ### Added

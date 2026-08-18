@@ -37,6 +37,14 @@ A Unity Editor tool that allows you to mark Unity assets and folders as favorite
 - **One-Click Access**: Single-click to select, double-click to open assets
 - **Visual Hierarchy**: Groups have distinctive blue headers with expand/collapse arrows
 
+### 🕒 **Prefab History**
+- **Automatic Tracking**: Every prefab you open in Prefab Mode is recorded automatically, newest first
+- **Second Tab**: Lives alongside Favorites in the same window — switch with the tab bar at the top
+- **Quick Return**: Single-click to ping a prefab in the Project window, double-click to reopen it in Prefab Mode
+- **Star to Keep**: Click the ★ on any history row to promote it straight into your Favorites
+- **Per Project**: History is stored per project, so one project's prefabs never show up in another's
+- **Configurable**: Turn recording off or change how many entries are kept in **Preferences → Favorite Assets**
+
 ### 🔧 **Advanced Controls**
 - **Smart Sorting**: Multiple sorting options with easy-to-use cycling buttons:
   - **Name** (A-Z or Z-A)
@@ -53,8 +61,8 @@ A Unity Editor tool that allows you to mark Unity assets and folders as favorite
 
 ### 🛡️ **Reliability & Performance**
 - **Automatic Cleanup**: Deleted assets are automatically removed from favorites
-- **Persistent Storage**: Data survives Unity restarts and project switches
-- **GUID-based Tracking**: Favorites persist even when assets are moved or renamed
+- **Persistent Storage**: Data survives Unity restarts, stored per project so projects never overwrite each other
+- **GUID-based Tracking**: Favorites and history persist even when assets are moved or renamed
 - **Thread-Safe Operations**: Robust data management with proper locking mechanisms
 
 ## Installation
@@ -150,6 +158,17 @@ Add this to your `manifest.json` file located in the `Packages` folder of your p
   - Click **×** button to delete groups (assets move to ungrouped)
   - Groups remember their collapsed state
 
+### Using Prefab History
+1. Open any prefab in Prefab Mode (double-click it in the Project window, or click the **>** arrow on a prefab)
+2. Switch to the **Prefab History** tab at the top of the Favorite Assets window
+3. Prefabs are listed newest first, with how long ago you opened each one
+   - **Single-click** to ping the prefab in the Project window
+   - **Double-click** to reopen it in Prefab Mode
+   - **★** to add it to your Favorites (or remove it again)
+   - **×** to drop a single entry, or **Clear History** in the toolbar to drop them all
+4. Prefabs that no longer exist stay in the list but are greyed out — history is a log, so it is never pruned behind your back
+5. Recording and the entry cap are configurable in **Edit → Preferences → Favorite Assets**
+
 ### Sorting & Filtering
 - **Sorting Controls**:
   - 🔵 **Blue Button**: Click to cycle through sorting options (Name → Type → Added → Modified)
@@ -166,7 +185,9 @@ Add this to your `manifest.json` file located in the `Packages` folder of your p
 ## Technical Details
 
 ### Data Architecture
-- **Storage Format**: Favorites and groups stored in JSON format at `Application.persistentDataPath/Editor/FavoriteAssetsData.json`
+- **Storage Format**: Favorites and groups stored in JSON at `<project>/UserSettings/FavoriteAssetsData.json`; prefab history at `<project>/UserSettings/FavoriteAssetsPrefabHistory.json`
+- **Per-Project Data**: Both files live inside the project and are covered by Unity's standard `.gitignore`, so favorites are never shared or overwritten between projects. Favorites saved by earlier versions in `Application.persistentDataPath` are migrated automatically the first time each project opens.
+- **Prefab History**: `PrefabHistoryTracker` hooks `PrefabStage.prefabStageOpened`; entries are deduplicated by GUID (revisiting moves an entry back to the top) and capped at a configurable limit
 - **Group System**: New `FavoriteGroup` class with metadata (ID, name, collapsed state, creation date, sort order)
 - **Asset Linking**: Assets linked to groups via `groupId` field in `FavoriteAssetData`
 - **Serialization**: DateTime fields converted to serializable long ticks for Unity compatibility
@@ -182,7 +203,7 @@ Add this to your `manifest.json` file located in the `Packages` folder of your p
 
 ### User Interface
 - **UI Framework**: Built using Unity's UIElements system with modern USS styling
-- **Responsive Design**: Compact, scalable interface that adapts to different window sizes
+- **Responsive Design**: Tabs share the width evenly and the toolbar wraps, so the window stays readable when docked narrow
 - **Color Coding**: Distinctive colors for each button type to improve usability
 - **Context Menus**: Native Unity GenericMenu integration for intuitive asset management
 - **Inline Editing**: TextField-based group renaming with keyboard shortcuts
